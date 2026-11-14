@@ -11,9 +11,35 @@ type NormalRangeProps = {
   max: number;
 };
 
-export type RangeProps = NormalRangeProps;
+type FixedRangeProps = {
+  mode: "fixed";
+  values: number[];
+};
 
-export function Range({ min, max }: RangeProps) {
+export type RangeProps = NormalRangeProps | FixedRangeProps;
+
+function getRangeConfig(props: RangeProps) {
+  if (props.mode === "fixed") {
+    const { values } = props;
+
+    return {
+      min: 0,
+      max: values.length - 1,
+      isEditable: false,
+      getPrice: (index: number) => values[index],
+    };
+  }
+
+  return {
+    min: props.min,
+    max: props.max,
+    isEditable: true,
+    getPrice: (value: number) => value,
+  };
+}
+
+export function Range(props: RangeProps) {
+  const { min, max, isEditable, getPrice } = getRangeConfig(props);
   const {
     minValue,
     maxValue,
@@ -26,6 +52,8 @@ export function Range({ min, max }: RangeProps) {
     max,
   });
 
+  const minPrice = getPrice(minValue);
+  const maxPrice = getPrice(maxValue);
   const minPercent = valueToPercent(minValue, min, max);
   const maxPercent = valueToPercent(maxValue, min, max);
 
@@ -38,8 +66,10 @@ export function Range({ min, max }: RangeProps) {
       <div className="justify-self-end">
         <RangeLabel
           label="Precio mínimo"
-          value={minValue}
-          onValueChange={(value) => setValue("min", value)}
+          value={minPrice}
+          onValueChange={
+            isEditable ? (value) => setValue("min", value) : undefined
+          }
         />
       </div>
 
@@ -51,7 +81,7 @@ export function Range({ min, max }: RangeProps) {
           value={minValue}
           min={min}
           max={maxValue - 1}
-          valueText={formatCurrency(minValue)}
+          valueText={formatCurrency(minPrice)}
           percent={minPercent}
           isDragging={activeHandle === "min"}
           onPointerDown={() => startDragging("min")}
@@ -62,7 +92,7 @@ export function Range({ min, max }: RangeProps) {
           value={maxValue}
           min={minValue + 1}
           max={max}
-          valueText={formatCurrency(maxValue)}
+          valueText={formatCurrency(maxPrice)}
           percent={maxPercent}
           isDragging={activeHandle === "max"}
           onPointerDown={() => startDragging("max")}
@@ -72,8 +102,10 @@ export function Range({ min, max }: RangeProps) {
       <div className="justify-self-start">
         <RangeLabel
           label="Precio máximo"
-          value={maxValue}
-          onValueChange={(value) => setValue("max", value)}
+          value={maxPrice}
+          onValueChange={
+            isEditable ? (value) => setValue("max", value) : undefined
+          }
         />
       </div>
     </div>
