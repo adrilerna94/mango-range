@@ -154,3 +154,83 @@ describe("Range en modo normal: arrastre", () => {
     expect(minHandle).toHaveClass("cursor-grab");
   });
 });
+
+const FIXED_VALUES = [1.99, 5.99, 10.99, 30.99, 50.99, 70.99];
+
+function renderFixedRange() {
+  render(<Range mode="fixed" values={FIXED_VALUES} />);
+
+  return {
+    minHandle: screen.getByRole("slider", { name: "Precio mínimo" }),
+    maxHandle: screen.getByRole("slider", { name: "Precio máximo" }),
+  };
+}
+
+describe("Range en modo fijo: estado inicial", () => {
+  it("empieza con los tiradores en el primer y el último valor", () => {
+    const { minHandle, maxHandle } = renderFixedRange();
+
+    expect(minHandle).toHaveAttribute("aria-valuetext", "1.99€");
+    expect(maxHandle).toHaveAttribute("aria-valuetext", "70.99€");
+  });
+
+  it("usa la posición en la lista como valor numérico del slider", () => {
+    const { minHandle, maxHandle } = renderFixedRange();
+
+    expect(minHandle).toHaveAttribute("aria-valuenow", "0");
+    expect(maxHandle).toHaveAttribute("aria-valuenow", "5");
+  });
+
+  it("coloca los tiradores en los extremos de la barra", () => {
+    const { minHandle, maxHandle } = renderFixedRange();
+
+    expect(minHandle).toHaveStyle({ left: "0%" });
+    expect(maxHandle).toHaveStyle({ left: "100%" });
+  });
+
+  it("muestra los precios como texto", () => {
+    renderFixedRange();
+
+    expect(screen.getByText("1.99€")).toBeInTheDocument();
+    expect(screen.getByText("70.99€")).toBeInTheDocument();
+  });
+
+  it("no permite editar los precios", () => {
+    renderFixedRange();
+
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+});
+
+describe("Range en modo fijo: arrastre", () => {
+  it("ajusta el tirador al valor más cercano de la lista", () => {
+    mockTrackSize(0, 200);
+    const { minHandle } = renderFixedRange();
+
+    fireEvent.pointerDown(minHandle);
+    movePointer(90);
+
+    expect(minHandle).toHaveAttribute("aria-valuetext", "10.99€");
+    expect(minHandle).toHaveStyle({ left: "40%" });
+  });
+
+  it("actualiza la etiqueta con el precio seleccionado", () => {
+    mockTrackSize(0, 200);
+    const { minHandle } = renderFixedRange();
+
+    fireEvent.pointerDown(minHandle);
+    movePointer(90);
+
+    expect(screen.getByText("10.99€")).toBeInTheDocument();
+  });
+
+  it("no deja que los tiradores coincidan en el mismo valor", () => {
+    mockTrackSize(0, 200);
+    const { maxHandle } = renderFixedRange();
+
+    fireEvent.pointerDown(maxHandle);
+    movePointer(0);
+
+    expect(maxHandle).toHaveAttribute("aria-valuetext", "5.99€");
+  });
+});
