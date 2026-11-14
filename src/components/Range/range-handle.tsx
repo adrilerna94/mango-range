@@ -39,7 +39,7 @@ export function RangeHandle({
       style={{ left: `${percent}%` }}
       onPointerDown={onPointerDown}
       onKeyDown={onKeyDown}
-      className={`absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 touch-none rounded-full bg-black transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black ${stateClasses}`}
+      className={`absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 touch-none rounded-full bg-accent ring-2 ring-surface transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${stateClasses}`}
     />
   );
 }
