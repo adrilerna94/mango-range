@@ -15,13 +15,16 @@ type UseRangeOptions = {
 export function useRange({ min, max }: UseRangeOptions) {
   const [selected, setSelected] = useState({ min, max });
   const [activeHandle, setActiveHandle] = useState<Handle | null>(null);
+  const [lastHandle, setLastHandle] = useState<Handle>("max");
   const trackRef = useRef<HTMLDivElement>(null);
 
   function setValue(handle: Handle, value: number) {
+    setLastHandle(handle);
     setSelected((current) => moveHandle(current, handle, value, { min, max }));
   }
 
   function startDragging(handle: Handle) {
+    setLastHandle(handle);
     setActiveHandle(handle);
   }
 
@@ -73,6 +76,7 @@ export function useRange({ min, max }: UseRangeOptions) {
     minValue: selected.min,
     maxValue: selected.max,
     activeHandle,
+    topHandle: activeHandle ?? lastHandle,
     trackRef,
     setValue,
     startDragging,

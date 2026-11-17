@@ -133,6 +133,23 @@ describe("useRange: arrastre", () => {
   });
 });
 
+describe("useRange: tirador superior", () => {
+  it("deja el máximo por encima al empezar", () => {
+    const result = renderRange();
+
+    expect(result.current.topHandle).toBe("max");
+  });
+
+  it("deja por encima el último tirador movido", () => {
+    const result = renderRange();
+
+    act(() => result.current.startDragging("min"));
+    releasePointer();
+
+    expect(result.current.topHandle).toBe("min");
+  });
+});
+
 describe("useRange: teclado", () => {
   it("mueve el tirador con las teclas de dirección", () => {
     const result = renderRange();

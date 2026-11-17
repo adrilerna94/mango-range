@@ -164,6 +164,17 @@ describe("Range en modo normal: arrastre y teclado", () => {
     expect(minHandle).toHaveAttribute("aria-valuenow", "2");
     expect(minHandle).toHaveStyle({ left: "2%" });
   });
+
+  it("deja por encima el tirador que se acaba de mover", async () => {
+    const user = userEvent.setup();
+    const { minHandle, maxHandle } = renderRange();
+
+    minHandle.focus();
+    await user.keyboard("{ArrowRight}");
+
+    expect(minHandle).toHaveClass("z-10");
+    expect(maxHandle).toHaveClass("z-0");
+  });
 });
 
 const FIXED_VALUES = [1.99, 5.99, 10.99, 30.99, 50.99, 70.99];
