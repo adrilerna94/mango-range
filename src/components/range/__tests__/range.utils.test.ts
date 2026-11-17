@@ -3,9 +3,10 @@ import {
   clamp,
   formatCurrency,
   getPercentFromPointer,
+  parseLabelValue,
   percentToValue,
   valueToPercent,
-} from "./range.utils";
+} from "../utils/range.utils";
 
 describe("clamp", () => {
   it("devuelve el valor si está dentro de los límites", () => {
@@ -82,5 +83,15 @@ describe("formatCurrency", () => {
 
   it("formatea un decimal", () => {
     expect(formatCurrency(5.99)).toBe("5.99€");
+  });
+});
+
+describe("parseLabelValue", () => {
+  it("convierte el texto en un número", () => {
+    expect(parseLabelValue("42")).toBe(42);
+  });
+
+  it.each(["", "   ", "abc"])("devuelve null para %j", (input) => {
+    expect(parseLabelValue(input)).toBeNull();
   });
 });

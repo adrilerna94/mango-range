@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { RangeHandle } from "./range-handle";
+import { RangeHandle } from "../range-handle";
 
 type Props = ComponentProps<typeof RangeHandle>;
 

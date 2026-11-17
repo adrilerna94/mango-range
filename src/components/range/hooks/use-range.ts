@@ -4,7 +4,7 @@ import {
   moveHandle,
   percentToValue,
   type Handle,
-} from "./range.utils";
+} from "../utils/range.utils";
 
 type UseRangeOptions = {
   min: number;

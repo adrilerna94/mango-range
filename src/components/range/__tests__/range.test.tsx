@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Range } from "./range";
+import { Range } from "../range";
 
 function renderRange() {
   render(<Range mode="normal" min={0} max={100} />);

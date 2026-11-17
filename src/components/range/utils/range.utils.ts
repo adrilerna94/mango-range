@@ -55,3 +55,11 @@ export function moveHandle(
 
   return { ...selected, max: clamp(value, selected.min + 1, bounds.max) };
 }
+
+export function parseLabelValue(input: string): number | null {
+  if (input.trim() === "") return null;
+
+  const value = Number(input);
+
+  return Number.isFinite(value) ? value : null;
+}
