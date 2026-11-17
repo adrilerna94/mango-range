@@ -117,6 +117,10 @@ describe("parseLabelValue", () => {
     expect(parseLabelValue("42")).toBe(42);
   });
 
+  it("redondea al entero más cercano", () => {
+    expect(parseLabelValue("30.6")).toBe(31);
+  });
+
   it.each(["", "   ", "abc"])("devuelve null para %j", (input) => {
     expect(parseLabelValue(input)).toBeNull();
   });

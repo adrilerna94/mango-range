@@ -22,8 +22,8 @@ export function EditableLabel({
     return (
       <input
         type="number"
-        inputMode="decimal"
-        step="any"
+        inputMode="numeric"
+        step={1}
         aria-label={label}
         autoFocus
         {...inputProps}

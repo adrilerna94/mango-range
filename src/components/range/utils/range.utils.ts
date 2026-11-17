@@ -88,5 +88,5 @@ export function parseLabelValue(input: string): number | null {
 
   const value = Number(input);
 
-  return Number.isFinite(value) ? value : null;
+  return Number.isFinite(value) ? Math.round(value) : null;
 }
