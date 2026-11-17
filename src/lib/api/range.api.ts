@@ -104,7 +104,10 @@ async function fetchJson<T>(
   return data;
 }
 
-// Los datos se cachean y se revalidan cada hora (perfil "hours" de Next).
+// Los datos se prerenderizan en el build dentro de la página estática y se
+// revalidan cada hora (perfil "hours" de Next): la página se sirve completa desde
+// la CDN, sin skeleton. Por eso `next build` necesita la API accesible en
+// NEXT_PUBLIC_API_URL.
 export async function getRangeLimits(): Promise<RangeLimits> {
   "use cache";
   cacheLife("hours");

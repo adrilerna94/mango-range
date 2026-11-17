@@ -15,7 +15,9 @@ jobs:
     name: checks
     runs-on: ubuntu-latest
     env:
-      NEXT_PUBLIC_API_URL: http://localhost:8080
+      # El build prerenderiza los datos del rango, así que necesita una API
+      # accesible: se usa el mock HTTP del despliegue de producción.
+      NEXT_PUBLIC_API_URL: https://mango-range-9cri.vercel.app
     steps:
       - uses: actions/checkout@v4
 
@@ -35,7 +37,9 @@ jobs:
     name: e2e
     runs-on: ubuntu-latest
     env:
-      NEXT_PUBLIC_API_URL: http://localhost:8080
+      # El build prerenderiza los datos del rango, así que necesita una API
+      # accesible: se usa el mock HTTP del despliegue de producción.
+      NEXT_PUBLIC_API_URL: https://mango-range-9cri.vercel.app
     steps:
       - uses: actions/checkout@v4
 
