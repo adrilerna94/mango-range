@@ -91,25 +91,6 @@ describe("Range en modo normal: edición de etiquetas", () => {
     ).toBeInTheDocument();
   });
 
-  it("limita el valor escrito al máximo del rango", async () => {
-    const user = userEvent.setup();
-    const { maxHandle } = renderRange();
-
-    await editLabel(user, /editar precio máximo/i, "500");
-
-    expect(maxHandle).toHaveAttribute("aria-valuenow", "100");
-  });
-
-  it("no deja que un valor escrito cruce el otro tirador", async () => {
-    const user = userEvent.setup();
-    const { minHandle } = renderRange();
-
-    await editLabel(user, /editar precio máximo/i, "40");
-    await editLabel(user, /editar precio mínimo/i, "90");
-
-    expect(minHandle).toHaveAttribute("aria-valuenow", "39");
-  });
-
   it("actualiza los límites ARIA de cada tirador según el otro", async () => {
     const user = userEvent.setup();
     const { minHandle, maxHandle } = renderRange();
@@ -123,26 +104,6 @@ describe("Range en modo normal: edición de etiquetas", () => {
 });
 
 describe("Range en modo normal: arrastre y teclado", () => {
-  it("mueve el tirador mínimo al arrastrarlo", () => {
-    mockTrackSize(0, 200);
-    const { minHandle } = renderRange();
-
-    fireEvent.pointerDown(minHandle);
-    movePointer(50);
-
-    expect(minHandle).toHaveAttribute("aria-valuenow", "25");
-  });
-
-  it("mueve el tirador máximo al arrastrarlo", () => {
-    mockTrackSize(0, 200);
-    const { maxHandle } = renderRange();
-
-    fireEvent.pointerDown(maxHandle);
-    movePointer(150);
-
-    expect(maxHandle).toHaveAttribute("aria-valuenow", "75");
-  });
-
   it("muestra el cursor de arrastre solo mientras se arrastra", () => {
     mockTrackSize(0, 200);
     const { minHandle } = renderRange();

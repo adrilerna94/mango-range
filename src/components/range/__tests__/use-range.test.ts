@@ -3,6 +3,10 @@ import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useRange } from "../hooks/use-range";
 
+// Las reglas de límites y de no cruzarse se prueban en `moveHandle`
+// (range.utils.test.ts). Aquí solo se prueba lo propio del hook: estado,
+// arrastre con el puntero y teclado.
+
 function createTrack(left: number, width: number) {
   const track = document.createElement("div");
   track.getBoundingClientRect = () => ({ left, width }) as DOMRect;
@@ -15,9 +19,9 @@ function movePointer(clientX: number) {
   });
 }
 
-function releasePointer() {
+function releasePointer(type = "pointerup") {
   act(() => {
-    window.dispatchEvent(new MouseEvent("pointerup"));
+    window.dispatchEvent(new MouseEvent(type));
   });
 }
 
@@ -48,24 +52,6 @@ describe("useRange: valores", () => {
     act(() => result.current.setValue("min", 30));
 
     expect(result.current.minValue).toBe(30);
-  });
-
-  it("limita el valor a los límites del rango", () => {
-    const result = renderRange();
-
-    act(() => result.current.setValue("min", -50));
-
-    expect(result.current.minValue).toBe(0);
-  });
-
-  it("no deja que los tiradores se crucen", () => {
-    const result = renderRange();
-
-    act(() => result.current.setValue("max", 40));
-    act(() => result.current.setValue("min", 90));
-
-    expect(result.current.minValue).toBe(39);
-    expect(result.current.maxValue).toBe(40);
   });
 
   it("recoloca los valores si los límites se estrechan", () => {
@@ -113,15 +99,6 @@ describe("useRange: arrastre", () => {
     expect(result.current.maxValue).toBe(75);
   });
 
-  it("no deja cruzar los tiradores al arrastrar", () => {
-    const result = renderRange();
-
-    act(() => result.current.startDragging("min"));
-    movePointer(200);
-
-    expect(result.current.minValue).toBe(99);
-  });
-
   it("deja de arrastrar al soltar el puntero", () => {
     const result = renderRange();
 
@@ -130,6 +107,24 @@ describe("useRange: arrastre", () => {
     movePointer(50);
 
     expect(result.current.activeHandle).toBeNull();
+    expect(result.current.minValue).toBe(0);
+  });
+
+  it("deja de arrastrar si el navegador cancela el puntero", () => {
+    const result = renderRange();
+
+    act(() => result.current.startDragging("min"));
+    releasePointer("pointercancel");
+
+    expect(result.current.activeHandle).toBeNull();
+  });
+
+  it("ignora el movimiento si la barra no está montada", () => {
+    const { result } = renderHook(() => useRange({ min: 0, max: 100 }));
+
+    act(() => result.current.startDragging("min"));
+    movePointer(50);
+
     expect(result.current.minValue).toBe(0);
   });
 
