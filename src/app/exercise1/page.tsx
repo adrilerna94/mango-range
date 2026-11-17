@@ -1,18 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { getRangeLimits } from "@/lib/api/range.api";
-import { Range } from "@/components/range/range";
+import { NormalRange } from "./components/normal-range";
 
 export const metadata: Metadata = {
   title: "Ejercicio 1",
 };
-
-async function NormalRange() {
-  const { min, max } = await getRangeLimits();
-
-  return <Range mode="normal" min={min} max={max} />;
-}
 
 export default function Exercise1Page() {
   return (

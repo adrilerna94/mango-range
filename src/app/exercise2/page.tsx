@@ -1,18 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { getRangeValues } from "@/lib/api/range.api";
-import { Range } from "@/components/range/range";
+import { FixedRange } from "./components/fixed-range";
 
 export const metadata: Metadata = {
   title: "Ejercicio 2",
 };
-
-async function FixedRange() {
-  const { rangeValues } = await getRangeValues();
-
-  return <Range mode="fixed" values={rangeValues} />;
-}
 
 export default function Exercise2Page() {
   return (
