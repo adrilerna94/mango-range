@@ -5,6 +5,7 @@ import {
   formatCurrency,
   getKeyboardValue,
   getPercentFromPointer,
+  moveHandle,
   parseLabelValue,
   percentToValue,
   valueToPercent,
@@ -109,6 +110,38 @@ describe("clampRange", () => {
       min: 49,
       max: 50,
     });
+  });
+});
+
+describe("moveHandle", () => {
+  it("mueve el tirador mínimo", () => {
+    expect(moveHandle({ min: 0, max: 100 }, "min", 30, BOUNDS)).toEqual({
+      min: 30,
+      max: 100,
+    });
+  });
+
+  it("mueve el tirador máximo", () => {
+    expect(moveHandle({ min: 0, max: 100 }, "max", 70, BOUNDS)).toEqual({
+      min: 0,
+      max: 70,
+    });
+  });
+
+  it("no deja que el mínimo salga del rango", () => {
+    expect(moveHandle({ min: 10, max: 100 }, "min", -50, BOUNDS).min).toBe(0);
+  });
+
+  it("no deja que el máximo salga del rango", () => {
+    expect(moveHandle({ min: 0, max: 90 }, "max", 500, BOUNDS).max).toBe(100);
+  });
+
+  it("no deja que el mínimo alcance ni cruce al máximo", () => {
+    expect(moveHandle({ min: 0, max: 40 }, "min", 90, BOUNDS).min).toBe(39);
+  });
+
+  it("no deja que el máximo alcance ni cruce al mínimo", () => {
+    expect(moveHandle({ min: 60, max: 100 }, "max", 10, BOUNDS).max).toBe(61);
   });
 });
 
