@@ -1,5 +1,5 @@
 import { useState, type FocusEvent, type KeyboardEvent } from "react";
-import { formatCurrency } from "./range.utils";
+import { formatCurrency } from "./utils/range.utils";
 
 type RangeLabelProps = {
   label: string;

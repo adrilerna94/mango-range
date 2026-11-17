@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { RangeLabel } from "./range-label";
+import { RangeLabel } from "../range-label";
 
 describe("RangeLabel en modo solo lectura", () => {
   it("muestra el valor formateado como precio", () => {

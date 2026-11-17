@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { getRangeValues } from "@/lib/api/range.api";
-import { Range } from "@/components/Range/range";
+import { Range } from "@/components/range/range";
 
 export const metadata: Metadata = {
   title: "Ejercicio 2",

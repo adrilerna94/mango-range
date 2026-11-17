@@ -2,8 +2,8 @@
 
 import { RangeHandle } from "./range-handle";
 import { RangeLabel } from "./range-label";
-import { formatCurrency, valueToPercent } from "./range.utils";
-import { useRange } from "./use-range";
+import { useRange } from "./hooks/use-range";
+import { formatCurrency, valueToPercent } from "./utils/range.utils";
 
 type NormalRangeProps = {
   mode: "normal";

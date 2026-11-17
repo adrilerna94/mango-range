@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { useRange } from "./use-range";
+import { useRange } from "../hooks/use-range";
 
 function createTrack(left: number, width: number) {
   const track = document.createElement("div");

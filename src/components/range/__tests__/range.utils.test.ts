@@ -5,7 +5,7 @@ import {
   getPercentFromPointer,
   percentToValue,
   valueToPercent,
-} from "./range.utils";
+} from "../utils/range.utils";
 
 describe("clamp", () => {
   it("devuelve el valor si está dentro de los límites", () => {
