@@ -67,6 +67,17 @@ describe("useRange: valores", () => {
     expect(result.current.minValue).toBe(39);
     expect(result.current.maxValue).toBe(40);
   });
+
+  it("recoloca los valores si los límites se estrechan", () => {
+    const { result, rerender } = renderHook((bounds) => useRange(bounds), {
+      initialProps: { min: 0, max: 100 },
+    });
+
+    rerender({ min: 10, max: 50 });
+
+    expect(result.current.minValue).toBe(10);
+    expect(result.current.maxValue).toBe(50);
+  });
 });
 
 describe("useRange: arrastre", () => {

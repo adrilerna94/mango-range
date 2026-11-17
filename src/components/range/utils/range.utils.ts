@@ -43,6 +43,18 @@ export function formatCurrency(value: number): string {
   return `${value}€`;
 }
 
+export function clampRange(
+  selected: SelectedRange,
+  bounds: SelectedRange,
+): SelectedRange {
+  const min = clamp(selected.min, bounds.min, bounds.max - 1);
+  const max = clamp(selected.max, min + 1, bounds.max);
+
+  if (min === selected.min && max === selected.max) return selected;
+
+  return { min, max };
+}
+
 export function moveHandle(
   selected: SelectedRange,
   handle: Handle,

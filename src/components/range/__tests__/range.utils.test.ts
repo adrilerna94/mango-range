@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   clamp,
+  clampRange,
   formatCurrency,
   getKeyboardValue,
   getPercentFromPointer,
@@ -88,6 +89,28 @@ describe("formatCurrency", () => {
 });
 
 const BOUNDS = { min: 0, max: 100 };
+
+describe("clampRange", () => {
+  it("devuelve la misma selección si ya está dentro de los límites", () => {
+    const selected = { min: 10, max: 90 };
+
+    expect(clampRange(selected, BOUNDS)).toBe(selected);
+  });
+
+  it("recoloca la selección dentro de unos límites más estrechos", () => {
+    expect(clampRange({ min: 0, max: 100 }, { min: 10, max: 50 })).toEqual({
+      min: 10,
+      max: 50,
+    });
+  });
+
+  it("mantiene al menos una unidad de separación entre los tiradores", () => {
+    expect(clampRange({ min: 80, max: 90 }, { min: 0, max: 50 })).toEqual({
+      min: 49,
+      max: 50,
+    });
+  });
+});
 
 describe("getKeyboardValue", () => {
   it.each([

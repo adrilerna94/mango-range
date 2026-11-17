@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import {
+  clampRange,
   getKeyboardValue,
   getPercentFromPointer,
   moveHandle,
@@ -18,9 +19,16 @@ export function useRange({ min, max }: UseRangeOptions) {
   const [lastHandle, setLastHandle] = useState<Handle>("max");
   const trackRef = useRef<HTMLDivElement>(null);
 
+  // Si los límites cambian (p. ej. tras revalidar los datos), los valores
+  // seleccionados se recolocan dentro del nuevo rango.
+  const bounds = { min, max };
+  const current = clampRange(selected, bounds);
+
   function setValue(handle: Handle, value: number) {
     setLastHandle(handle);
-    setSelected((current) => moveHandle(current, handle, value, { min, max }));
+    setSelected((previous) =>
+      moveHandle(clampRange(previous, bounds), handle, value, bounds),
+    );
   }
 
   function startDragging(handle: Handle) {
@@ -30,7 +38,7 @@ export function useRange({ min, max }: UseRangeOptions) {
 
   function handleKeyDown(handle: Handle) {
     return (event: KeyboardEvent<HTMLElement>) => {
-      const value = getKeyboardValue(event.key, selected[handle], { min, max });
+      const value = getKeyboardValue(event.key, current[handle], bounds);
       if (value === null) return;
 
       event.preventDefault();
@@ -41,6 +49,7 @@ export function useRange({ min, max }: UseRangeOptions) {
   useEffect(() => {
     if (!activeHandle) return;
     const handle = activeHandle;
+    const limits = { min, max };
 
     function handlePointerMove(event: PointerEvent) {
       const track = trackRef.current;
@@ -50,8 +59,8 @@ export function useRange({ min, max }: UseRangeOptions) {
       const percent = getPercentFromPointer(event.clientX, left, width);
       const value = percentToValue(percent, min, max);
 
-      setSelected((current) =>
-        moveHandle(current, handle, value, { min, max }),
+      setSelected((previous) =>
+        moveHandle(clampRange(previous, limits), handle, value, limits),
       );
     }
 
@@ -73,8 +82,8 @@ export function useRange({ min, max }: UseRangeOptions) {
   }, [activeHandle, min, max]);
 
   return {
-    minValue: selected.min,
-    maxValue: selected.max,
+    minValue: current.min,
+    maxValue: current.max,
     activeHandle,
     topHandle: activeHandle ?? lastHandle,
     trackRef,
