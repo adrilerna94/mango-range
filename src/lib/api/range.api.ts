@@ -1,3 +1,5 @@
+import { cacheLife } from "next/cache";
+
 export type RangeLimits = {
   min: number;
   max: number;
@@ -64,7 +66,6 @@ async function fetchJson<T>(
 
   try {
     response = await fetch(`${API_URL}${endpoint}`, {
-      cache: "no-store",
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
   } catch (error) {
@@ -103,10 +104,17 @@ async function fetchJson<T>(
   return data;
 }
 
+// Los datos se cachean y se revalidan cada hora (perfil "hours" de Next).
 export async function getRangeLimits(): Promise<RangeLimits> {
+  "use cache";
+  cacheLife("hours");
+
   return fetchJson("/api/range", isRangeLimits);
 }
 
 export async function getRangeValues(): Promise<RangeValues> {
+  "use cache";
+  cacheLife("hours");
+
   return fetchJson("/api/range-values", isRangeValues);
 }

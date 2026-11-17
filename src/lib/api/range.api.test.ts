@@ -2,6 +2,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiError, getRangeLimits, getRangeValues } from "./range.api";
 
+// `cacheLife` solo funciona dentro del runtime de Next.
+vi.mock("next/cache", () => ({ cacheLife: vi.fn() }));
+
 function mockFetch(body: unknown, status = 200) {
   const fetchMock = vi
     .fn()
