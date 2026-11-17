@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   clamp,
   formatCurrency,
+  getKeyboardValue,
   getPercentFromPointer,
   parseLabelValue,
   percentToValue,
@@ -83,6 +84,31 @@ describe("formatCurrency", () => {
 
   it("formatea un decimal", () => {
     expect(formatCurrency(5.99)).toBe("5.99€");
+  });
+});
+
+const BOUNDS = { min: 0, max: 100 };
+
+describe("getKeyboardValue", () => {
+  it.each([
+    ["ArrowRight", 51],
+    ["ArrowUp", 51],
+    ["ArrowLeft", 49],
+    ["ArrowDown", 49],
+    ["PageUp", 60],
+    ["PageDown", 40],
+    ["Home", 0],
+    ["End", 100],
+  ])("calcula el valor para la tecla %s", (key, expected) => {
+    expect(getKeyboardValue(key, 50, BOUNDS)).toBe(expected);
+  });
+
+  it("salta al menos una unidad con PageUp en rangos pequeños", () => {
+    expect(getKeyboardValue("PageUp", 2, { min: 0, max: 5 })).toBe(3);
+  });
+
+  it("devuelve null si la tecla no mueve el tirador", () => {
+    expect(getKeyboardValue("Tab", 50, BOUNDS)).toBeNull();
   });
 });
 

@@ -47,6 +47,7 @@ export function Range(props: RangeProps) {
     trackRef,
     setValue,
     startDragging,
+    handleKeyDown,
   } = useRange({
     min,
     max,
@@ -92,6 +93,7 @@ export function Range(props: RangeProps) {
           percent={minPercent}
           isDragging={activeHandle === "min"}
           onPointerDown={() => startDragging("min")}
+          onKeyDown={handleKeyDown("min")}
         />
 
         <RangeHandle
@@ -103,6 +105,7 @@ export function Range(props: RangeProps) {
           percent={maxPercent}
           isDragging={activeHandle === "max"}
           onPointerDown={() => startDragging("max")}
+          onKeyDown={handleKeyDown("max")}
         />
       </div>
 

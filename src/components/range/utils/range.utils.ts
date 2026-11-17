@@ -56,6 +56,33 @@ export function moveHandle(
   return { ...selected, max: clamp(value, selected.min + 1, bounds.max) };
 }
 
+export function getKeyboardValue(
+  key: string,
+  current: number,
+  bounds: SelectedRange,
+): number | null {
+  const largeStep = Math.max(1, Math.round((bounds.max - bounds.min) / 10));
+
+  switch (key) {
+    case "ArrowLeft":
+    case "ArrowDown":
+      return current - 1;
+    case "ArrowRight":
+    case "ArrowUp":
+      return current + 1;
+    case "PageDown":
+      return current - largeStep;
+    case "PageUp":
+      return current + largeStep;
+    case "Home":
+      return bounds.min;
+    case "End":
+      return bounds.max;
+    default:
+      return null;
+  }
+}
+
 export function parseLabelValue(input: string): number | null {
   if (input.trim() === "") return null;
 

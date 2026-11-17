@@ -1,5 +1,6 @@
+import type { KeyboardEvent } from "react";
 import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { useRange } from "../hooks/use-range";
 
 function createTrack(left: number, width: number) {
@@ -24,6 +25,13 @@ function renderRange() {
   const { result } = renderHook(() => useRange({ min: 0, max: 100 }));
   result.current.trackRef.current = createTrack(0, 200);
   return result;
+}
+
+function keyEvent(key: string) {
+  return {
+    key,
+    preventDefault: vi.fn(),
+  } as unknown as KeyboardEvent<HTMLElement>;
 }
 
 describe("useRange: valores", () => {
@@ -122,5 +130,35 @@ describe("useRange: arrastre", () => {
 
     releasePointer();
     expect(document.body.style.cursor).toBe("");
+  });
+});
+
+describe("useRange: teclado", () => {
+  it("mueve el tirador con las teclas de dirección", () => {
+    const result = renderRange();
+
+    act(() => result.current.handleKeyDown("min")(keyEvent("ArrowRight")));
+
+    expect(result.current.minValue).toBe(1);
+  });
+
+  it("evita el scroll de la página al usar una tecla del slider", () => {
+    const result = renderRange();
+    const event = keyEvent("PageDown");
+
+    act(() => result.current.handleKeyDown("max")(event));
+
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(result.current.maxValue).toBe(90);
+  });
+
+  it("ignora las teclas que no mueven el tirador", () => {
+    const result = renderRange();
+    const event = keyEvent("Tab");
+
+    act(() => result.current.handleKeyDown("min")(event));
+
+    expect(event.preventDefault).not.toHaveBeenCalled();
+    expect(result.current.minValue).toBe(0);
   });
 });

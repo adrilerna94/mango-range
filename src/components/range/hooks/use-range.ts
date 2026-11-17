@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import {
+  getKeyboardValue,
   getPercentFromPointer,
   moveHandle,
   percentToValue,
@@ -22,6 +23,16 @@ export function useRange({ min, max }: UseRangeOptions) {
 
   function startDragging(handle: Handle) {
     setActiveHandle(handle);
+  }
+
+  function handleKeyDown(handle: Handle) {
+    return (event: KeyboardEvent<HTMLElement>) => {
+      const value = getKeyboardValue(event.key, selected[handle], { min, max });
+      if (value === null) return;
+
+      event.preventDefault();
+      setValue(handle, value);
+    };
   }
 
   useEffect(() => {
@@ -65,5 +76,6 @@ export function useRange({ min, max }: UseRangeOptions) {
     trackRef,
     setValue,
     startDragging,
+    handleKeyDown,
   };
 }
