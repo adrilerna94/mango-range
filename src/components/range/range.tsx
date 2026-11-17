@@ -49,10 +49,7 @@ export function Range(props: RangeProps) {
     setValue,
     startDragging,
     handleKeyDown,
-  } = useRange({
-    min,
-    max,
-  });
+  } = useRange({ min, max });
 
   const minPrice = getPrice(minValue);
   const maxPrice = getPrice(maxValue);
@@ -63,9 +60,11 @@ export function Range(props: RangeProps) {
     <div
       role="group"
       aria-label="Rango de precios"
-      className="grid w-full max-w-md grid-cols-[5rem_1fr_5rem] items-center gap-3 select-none"
+      className="grid w-full grid-cols-2 items-center gap-3 select-none sm:grid-cols-[auto_minmax(0,1fr)_auto]"
     >
-      <div className="justify-self-end">
+      {/* Móvil: etiquetas en una fila encima de la barra, que ocupa todo el ancho.
+          Desde sm: etiquetas a ambos lados de la barra. */}
+      <div className="col-start-1 row-start-1 flex h-6 items-center sm:min-w-20 sm:justify-end">
         <RangeLabel
           label="Precio mínimo"
           value={minPrice}
@@ -75,7 +74,10 @@ export function Range(props: RangeProps) {
         />
       </div>
 
-      <div ref={trackRef} className="relative flex h-6 items-center">
+      <div
+        ref={trackRef}
+        className="relative col-span-2 row-start-2 flex h-6 items-center sm:col-span-1 sm:col-start-2 sm:row-start-1"
+      >
         <div className="h-1 w-full rounded-full bg-border" />
         <div
           className="absolute h-1 rounded-full bg-accent"
@@ -112,7 +114,7 @@ export function Range(props: RangeProps) {
         />
       </div>
 
-      <div className="justify-self-start">
+      <div className="col-start-2 row-start-1 flex h-6 items-center justify-end sm:col-start-3 sm:min-w-20 sm:justify-start">
         <RangeLabel
           label="Precio máximo"
           value={maxPrice}
