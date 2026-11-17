@@ -15,6 +15,7 @@ function renderHandle(props: Partial<Props> = {}) {
     valueText: "25€",
     percent: 25,
     isDragging: false,
+    isOnTop: false,
     onPointerDown: vi.fn(),
   };
 
@@ -89,5 +90,17 @@ describe("RangeHandle", () => {
     const handle = renderHandle({ isDragging: true });
 
     expect(handle).toHaveClass("cursor-grabbing");
+  });
+
+  it("queda por debajo del otro tirador por defecto", () => {
+    const handle = renderHandle({ isOnTop: false });
+
+    expect(handle).toHaveClass("z-0");
+  });
+
+  it("queda por encima del otro tirador cuando es el último movido", () => {
+    const handle = renderHandle({ isOnTop: true });
+
+    expect(handle).toHaveClass("z-10");
   });
 });

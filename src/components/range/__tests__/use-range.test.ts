@@ -1,5 +1,6 @@
+import type { KeyboardEvent } from "react";
 import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { useRange } from "../hooks/use-range";
 
 function createTrack(left: number, width: number) {
@@ -24,6 +25,13 @@ function renderRange() {
   const { result } = renderHook(() => useRange({ min: 0, max: 100 }));
   result.current.trackRef.current = createTrack(0, 200);
   return result;
+}
+
+function keyEvent(key: string) {
+  return {
+    key,
+    preventDefault: vi.fn(),
+  } as unknown as KeyboardEvent<HTMLElement>;
 }
 
 describe("useRange: valores", () => {
@@ -58,6 +66,17 @@ describe("useRange: valores", () => {
 
     expect(result.current.minValue).toBe(39);
     expect(result.current.maxValue).toBe(40);
+  });
+
+  it("recoloca los valores si los límites se estrechan", () => {
+    const { result, rerender } = renderHook((bounds) => useRange(bounds), {
+      initialProps: { min: 0, max: 100 },
+    });
+
+    rerender({ min: 10, max: 50 });
+
+    expect(result.current.minValue).toBe(10);
+    expect(result.current.maxValue).toBe(50);
   });
 });
 
@@ -122,5 +141,52 @@ describe("useRange: arrastre", () => {
 
     releasePointer();
     expect(document.body.style.cursor).toBe("");
+  });
+});
+
+describe("useRange: tirador superior", () => {
+  it("deja el máximo por encima al empezar", () => {
+    const result = renderRange();
+
+    expect(result.current.topHandle).toBe("max");
+  });
+
+  it("deja por encima el último tirador movido", () => {
+    const result = renderRange();
+
+    act(() => result.current.startDragging("min"));
+    releasePointer();
+
+    expect(result.current.topHandle).toBe("min");
+  });
+});
+
+describe("useRange: teclado", () => {
+  it("mueve el tirador con las teclas de dirección", () => {
+    const result = renderRange();
+
+    act(() => result.current.handleKeyDown("min")(keyEvent("ArrowRight")));
+
+    expect(result.current.minValue).toBe(1);
+  });
+
+  it("evita el scroll de la página al usar una tecla del slider", () => {
+    const result = renderRange();
+    const event = keyEvent("PageDown");
+
+    act(() => result.current.handleKeyDown("max")(event));
+
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(result.current.maxValue).toBe(90);
+  });
+
+  it("ignora las teclas que no mueven el tirador", () => {
+    const result = renderRange();
+    const event = keyEvent("Tab");
+
+    act(() => result.current.handleKeyDown("min")(event));
+
+    expect(event.preventDefault).not.toHaveBeenCalled();
+    expect(result.current.minValue).toBe(0);
   });
 });

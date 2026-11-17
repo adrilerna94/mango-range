@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   clamp,
+  clampRange,
   formatCurrency,
+  getKeyboardValue,
   getPercentFromPointer,
   parseLabelValue,
   percentToValue,
@@ -86,9 +88,60 @@ describe("formatCurrency", () => {
   });
 });
 
+const BOUNDS = { min: 0, max: 100 };
+
+describe("clampRange", () => {
+  it("devuelve la misma selección si ya está dentro de los límites", () => {
+    const selected = { min: 10, max: 90 };
+
+    expect(clampRange(selected, BOUNDS)).toBe(selected);
+  });
+
+  it("recoloca la selección dentro de unos límites más estrechos", () => {
+    expect(clampRange({ min: 0, max: 100 }, { min: 10, max: 50 })).toEqual({
+      min: 10,
+      max: 50,
+    });
+  });
+
+  it("mantiene al menos una unidad de separación entre los tiradores", () => {
+    expect(clampRange({ min: 80, max: 90 }, { min: 0, max: 50 })).toEqual({
+      min: 49,
+      max: 50,
+    });
+  });
+});
+
+describe("getKeyboardValue", () => {
+  it.each([
+    ["ArrowRight", 51],
+    ["ArrowUp", 51],
+    ["ArrowLeft", 49],
+    ["ArrowDown", 49],
+    ["PageUp", 60],
+    ["PageDown", 40],
+    ["Home", 0],
+    ["End", 100],
+  ])("calcula el valor para la tecla %s", (key, expected) => {
+    expect(getKeyboardValue(key, 50, BOUNDS)).toBe(expected);
+  });
+
+  it("salta al menos una unidad con PageUp en rangos pequeños", () => {
+    expect(getKeyboardValue("PageUp", 2, { min: 0, max: 5 })).toBe(3);
+  });
+
+  it("devuelve null si la tecla no mueve el tirador", () => {
+    expect(getKeyboardValue("Tab", 50, BOUNDS)).toBeNull();
+  });
+});
+
 describe("parseLabelValue", () => {
   it("convierte el texto en un número", () => {
     expect(parseLabelValue("42")).toBe(42);
+  });
+
+  it("redondea al entero más cercano", () => {
+    expect(parseLabelValue("30.6")).toBe(31);
   });
 
   it.each(["", "   ", "abc"])("devuelve null para %j", (input) => {

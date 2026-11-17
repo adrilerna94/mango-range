@@ -55,6 +55,16 @@ describe("EditableLabel", () => {
     expect(onValueChange).toHaveBeenCalledWith(25);
   });
 
+  it("redondea los decimales al entero más cercano", async () => {
+    const { user, onValueChange } = renderLabel();
+
+    await user.click(screen.getByRole("button"));
+    await user.clear(screen.getByRole("spinbutton"));
+    await user.type(screen.getByRole("spinbutton"), "30.6{Enter}");
+
+    expect(onValueChange).toHaveBeenCalledWith(31);
+  });
+
   it("cancela la edición al pulsar Escape", async () => {
     const { user, onValueChange } = renderLabel();
 
@@ -64,6 +74,28 @@ describe("EditableLabel", () => {
 
     expect(onValueChange).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: /1€/ })).toBeInTheDocument();
+  });
+
+  it.each(["{Enter}", "{Escape}"])(
+    "devuelve el foco al botón al cerrar con %s",
+    async (key) => {
+      const { user } = renderLabel();
+
+      await user.click(screen.getByRole("button"));
+      await user.keyboard(key);
+
+      expect(screen.getByRole("button")).toHaveFocus();
+      expect(screen.queryByRole("spinbutton")).not.toBeInTheDocument();
+    },
+  );
+
+  it("no recupera el foco si el usuario sale del campo con Tab", async () => {
+    const { user } = renderLabel();
+
+    await user.click(screen.getByRole("button"));
+    await user.tab();
+
+    expect(screen.getByRole("button")).not.toHaveFocus();
   });
 
   it("no confirma si el campo está vacío", async () => {

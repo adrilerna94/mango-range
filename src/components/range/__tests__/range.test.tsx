@@ -122,7 +122,7 @@ describe("Range en modo normal: edición de etiquetas", () => {
   });
 });
 
-describe("Range en modo normal: arrastre", () => {
+describe("Range en modo normal: arrastre y teclado", () => {
   it("mueve el tirador mínimo al arrastrarlo", () => {
     mockTrackSize(0, 200);
     const { minHandle } = renderRange();
@@ -152,6 +152,28 @@ describe("Range en modo normal: arrastre", () => {
 
     releasePointer();
     expect(minHandle).toHaveClass("cursor-grab");
+  });
+
+  it("mueve el tirador con las flechas del teclado", async () => {
+    const user = userEvent.setup();
+    const { minHandle } = renderRange();
+
+    minHandle.focus();
+    await user.keyboard("{ArrowRight}{ArrowRight}");
+
+    expect(minHandle).toHaveAttribute("aria-valuenow", "2");
+    expect(minHandle).toHaveStyle({ left: "2%" });
+  });
+
+  it("deja por encima el tirador que se acaba de mover", async () => {
+    const user = userEvent.setup();
+    const { minHandle, maxHandle } = renderRange();
+
+    minHandle.focus();
+    await user.keyboard("{ArrowRight}");
+
+    expect(minHandle).toHaveClass("z-10");
+    expect(maxHandle).toHaveClass("z-0");
   });
 });
 
@@ -202,7 +224,7 @@ describe("Range en modo fijo: estado inicial", () => {
   });
 });
 
-describe("Range en modo fijo: arrastre", () => {
+describe("Range en modo fijo: arrastre y teclado", () => {
   it("ajusta el tirador al valor más cercano de la lista", () => {
     mockTrackSize(0, 200);
     const { minHandle } = renderFixedRange();
@@ -232,5 +254,26 @@ describe("Range en modo fijo: arrastre", () => {
     movePointer(0);
 
     expect(maxHandle).toHaveAttribute("aria-valuetext", "5.99€");
+  });
+
+  it("pasa al siguiente valor de la lista con las flechas", async () => {
+    const user = userEvent.setup();
+    const { minHandle } = renderFixedRange();
+
+    minHandle.focus();
+    await user.keyboard("{ArrowRight}");
+
+    expect(minHandle).toHaveAttribute("aria-valuetext", "5.99€");
+    expect(screen.getByText("5.99€")).toBeInTheDocument();
+  });
+
+  it("con End se queda en el valor anterior al del otro tirador", async () => {
+    const user = userEvent.setup();
+    const { minHandle } = renderFixedRange();
+
+    minHandle.focus();
+    await user.keyboard("{End}");
+
+    expect(minHandle).toHaveAttribute("aria-valuetext", "50.99€");
   });
 });

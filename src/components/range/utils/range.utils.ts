@@ -43,6 +43,18 @@ export function formatCurrency(value: number): string {
   return `${value}€`;
 }
 
+export function clampRange(
+  selected: SelectedRange,
+  bounds: SelectedRange,
+): SelectedRange {
+  const min = clamp(selected.min, bounds.min, bounds.max - 1);
+  const max = clamp(selected.max, min + 1, bounds.max);
+
+  if (min === selected.min && max === selected.max) return selected;
+
+  return { min, max };
+}
+
 export function moveHandle(
   selected: SelectedRange,
   handle: Handle,
@@ -56,10 +68,37 @@ export function moveHandle(
   return { ...selected, max: clamp(value, selected.min + 1, bounds.max) };
 }
 
+export function getKeyboardValue(
+  key: string,
+  current: number,
+  bounds: SelectedRange,
+): number | null {
+  const largeStep = Math.max(1, Math.round((bounds.max - bounds.min) / 10));
+
+  switch (key) {
+    case "ArrowLeft":
+    case "ArrowDown":
+      return current - 1;
+    case "ArrowRight":
+    case "ArrowUp":
+      return current + 1;
+    case "PageDown":
+      return current - largeStep;
+    case "PageUp":
+      return current + largeStep;
+    case "Home":
+      return bounds.min;
+    case "End":
+      return bounds.max;
+    default:
+      return null;
+  }
+}
+
 export function parseLabelValue(input: string): number | null {
   if (input.trim() === "") return null;
 
   const value = Number(input);
 
-  return Number.isFinite(value) ? value : null;
+  return Number.isFinite(value) ? Math.round(value) : null;
 }
