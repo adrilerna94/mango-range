@@ -64,7 +64,7 @@ function EditableLabel({ label, value, onValueChange }: EditableLabelProps) {
         onFocus={(event) => event.currentTarget.select()}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        className="w-20 rounded border border-black px-1 text-sm tabular-nums"
+        className="w-20 rounded border border-border bg-surface px-1 text-sm tabular-nums"
       />
     );
   }
@@ -74,7 +74,7 @@ function EditableLabel({ label, value, onValueChange }: EditableLabelProps) {
       type="button"
       aria-label={`Editar ${label.toLowerCase()}: ${text}`}
       onClick={() => setIsEditing(true)}
-      className="cursor-pointer rounded px-1 text-sm tabular-nums hover:underline focus-visible:outline-2 focus-visible:outline-black"
+      className="cursor-pointer rounded px-1 text-sm tabular-nums hover:underline focus-visible:outline-2 focus-visible:outline-accent"
     >
       {text}
     </button>

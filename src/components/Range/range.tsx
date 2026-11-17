@@ -74,7 +74,14 @@ export function Range(props: RangeProps) {
       </div>
 
       <div ref={trackRef} className="relative flex h-6 items-center">
-        <div className="h-0.5 w-full bg-black" />
+        <div className="h-1 w-full rounded-full bg-border" />
+        <div
+          className="absolute h-1 rounded-full bg-accent"
+          style={{
+            left: `${minPercent}%`,
+            width: `${maxPercent - minPercent}%`,
+          }}
+        />
 
         <RangeHandle
           label="Precio mínimo"
