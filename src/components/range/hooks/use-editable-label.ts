@@ -1,4 +1,10 @@
-import { useRef, useState, type FocusEvent, type KeyboardEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FocusEvent,
+  type KeyboardEvent,
+} from "react";
 import { parseLabelValue } from "../utils/range.utils";
 
 type UseEditableLabelOptions = {
@@ -11,7 +17,18 @@ export function useEditableLabel({
   onValueChange,
 }: UseEditableLabelOptions) {
   const [isEditing, setIsEditing] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const cancelledRef = useRef(false);
+  const restoreFocusRef = useRef(false);
+
+  // Al cerrar con Enter o Escape el input desaparece: devolvemos el foco al
+  // botón para que el usuario de teclado no lo pierda.
+  useEffect(() => {
+    if (isEditing || !restoreFocusRef.current) return;
+
+    restoreFocusRef.current = false;
+    buttonRef.current?.focus();
+  }, [isEditing]);
 
   function startEditing() {
     cancelledRef.current = false;
@@ -31,13 +48,18 @@ export function useEditableLabel({
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key !== "Enter" && event.key !== "Escape") return;
 
+    // Sin esto, el Enter que confirma "activaría" el botón que recibe el foco
+    // y volvería a abrir la edición.
+    event.preventDefault();
     cancelledRef.current = event.key === "Escape";
+    restoreFocusRef.current = true;
     event.currentTarget.blur();
   }
 
   return {
     isEditing,
     startEditing,
+    buttonRef,
     inputProps: {
       defaultValue: value,
       onFocus: (event: FocusEvent<HTMLInputElement>) =>

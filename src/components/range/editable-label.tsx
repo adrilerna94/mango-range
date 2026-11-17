@@ -12,7 +12,7 @@ export function EditableLabel({
   value,
   onValueChange,
 }: EditableLabelProps) {
-  const { isEditing, startEditing, inputProps } = useEditableLabel({
+  const { isEditing, startEditing, buttonRef, inputProps } = useEditableLabel({
     value,
     onValueChange,
   });
@@ -34,6 +34,7 @@ export function EditableLabel({
 
   return (
     <button
+      ref={buttonRef}
       type="button"
       aria-label={`Editar ${label.toLowerCase()}: ${text}`}
       onClick={startEditing}

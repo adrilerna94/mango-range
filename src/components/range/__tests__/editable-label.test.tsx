@@ -66,6 +66,28 @@ describe("EditableLabel", () => {
     expect(screen.getByRole("button", { name: /1€/ })).toBeInTheDocument();
   });
 
+  it.each(["{Enter}", "{Escape}"])(
+    "devuelve el foco al botón al cerrar con %s",
+    async (key) => {
+      const { user } = renderLabel();
+
+      await user.click(screen.getByRole("button"));
+      await user.keyboard(key);
+
+      expect(screen.getByRole("button")).toHaveFocus();
+      expect(screen.queryByRole("spinbutton")).not.toBeInTheDocument();
+    },
+  );
+
+  it("no recupera el foco si el usuario sale del campo con Tab", async () => {
+    const { user } = renderLabel();
+
+    await user.click(screen.getByRole("button"));
+    await user.tab();
+
+    expect(screen.getByRole("button")).not.toHaveFocus();
+  });
+
   it("no confirma si el campo está vacío", async () => {
     const { user, onValueChange } = renderLabel();
 
