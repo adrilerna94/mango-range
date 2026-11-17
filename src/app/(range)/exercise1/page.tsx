@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { RangeSkeleton } from "@/components/range/range-skeleton";
 import { NormalRange } from "./components/normal-range";
 
 export const metadata: Metadata = {
@@ -13,9 +14,7 @@ export default function Exercise1Page() {
       <h1 className="text-center text-2xl font-semibold tracking-tight">
         Rango normal
       </h1>
-      <Suspense
-        fallback={<p className="text-center text-sm text-muted">Cargando...</p>}
-      >
+      <Suspense fallback={<RangeSkeleton />}>
         <NormalRange />
       </Suspense>
       <Link
