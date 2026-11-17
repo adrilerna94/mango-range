@@ -1,3 +1,10 @@
+export type Handle = "min" | "max";
+
+export type SelectedRange = {
+  min: number;
+  max: number;
+};
+
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
@@ -34,4 +41,17 @@ export function getPercentFromPointer(
 
 export function formatCurrency(value: number): string {
   return `${value}€`;
+}
+
+export function moveHandle(
+  selected: SelectedRange,
+  handle: Handle,
+  value: number,
+  bounds: SelectedRange,
+): SelectedRange {
+  if (handle === "min") {
+    return { ...selected, min: clamp(value, bounds.min, selected.max - 1) };
+  }
+
+  return { ...selected, max: clamp(value, selected.min + 1, bounds.max) };
 }
