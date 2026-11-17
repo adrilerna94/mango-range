@@ -7,7 +7,7 @@ export type RangeValues = {
   rangeValues: number[];
 };
 
-const API_URL = process.env.API_URL ?? "http://localhost:8080";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 const TIMEOUT_MS = 5000;
 
 export class ApiError extends Error {
