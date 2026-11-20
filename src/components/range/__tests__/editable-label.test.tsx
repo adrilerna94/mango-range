@@ -20,8 +20,8 @@ describe("EditableLabel", () => {
     renderLabel();
 
     expect(
-      screen.getByRole("button", { name: "Editar precio mínimo: 1€" }),
-    ).toHaveTextContent("1€");
+      screen.getByRole("button", { name: "Editar precio mínimo: 1\u00a0€" }),
+    ).toHaveTextContent("1 €");
   });
 
   it("al hacer clic muestra un campo enfocado con el valor actual", async () => {
@@ -32,6 +32,14 @@ describe("EditableLabel", () => {
     const input = screen.getByRole("spinbutton", { name: "Precio mínimo" });
     expect(input).toHaveValue(1);
     expect(input).toHaveFocus();
+  });
+
+  it("muestra el símbolo del euro junto al campo", async () => {
+    const { user } = renderLabel();
+
+    await user.click(screen.getByRole("button"));
+
+    expect(screen.getByText("€")).toHaveAttribute("aria-hidden", "true");
   });
 
   it("confirma el nuevo valor al pulsar Enter", async () => {
@@ -73,7 +81,9 @@ describe("EditableLabel", () => {
     await user.type(screen.getByRole("spinbutton"), "50{Escape}");
 
     expect(onValueChange).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: /1€/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /1\u00a0€/ }),
+    ).toBeInTheDocument();
   });
 
   it.each(["{Enter}", "{Escape}"])(

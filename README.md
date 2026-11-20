@@ -16,22 +16,23 @@ Los datos de los dos ejercicios llegan de un servicio HTTP mockeado:
 
 ## Puesta en marcha
 
-Requisitos: Node.js 22 o superior y npm.
+Requisitos: Node.js 22 o superior y npm. La versión está fijada en `.nvmrc` (y en `engines` de `package.json`), así que con nvm basta con `nvm use`.
 
 ```bash
+nvm use                      # opcional, lee .nvmrc
 npm ci
 cp .env.example .env.local
 npm run dev                  # http://localhost:8080
 ```
 
-La variable `NEXT_PUBLIC_API_URL` indica la URL base del servicio HTTP. En local es `http://localhost:8080`, la propia app.
+La variable `API_URL` indica la URL base del servicio HTTP. En local es `http://localhost:8080`, la propia app. Solo la lee el servidor, por eso no lleva el prefijo `NEXT_PUBLIC_` y no acaba en el JavaScript del navegador.
 
 ## Scripts
 
 | Script                  | Qué hace                                                         |
 | ----------------------- | ---------------------------------------------------------------- |
 | `npm run dev`           | Servidor de desarrollo en el puerto 8080.                        |
-| `npm run build`         | Build de producción (necesita la API accesible, ver abajo).      |
+| `npm run build`         | Build de producción.                                             |
 | `npm run start`         | Sirve el build en el puerto 8080.                                |
 | `npm run lint`          | ESLint.                                                          |
 | `npm run format:check`  | Comprueba el formato con Prettier (`npm run format` lo corrige). |
@@ -39,8 +40,6 @@ La variable `NEXT_PUBLIC_API_URL` indica la URL base del servicio HTTP. En local
 | `npm test`              | Vitest en modo watch.                                            |
 | `npm run test:coverage` | Tests unitarios y de integración con cobertura.                  |
 | `npm run test:e2e`      | Tests E2E con Playwright.                                        |
-
-**El build necesita la API.** Las páginas se prerenderizan con los datos ya incluidos, así que `next build` llama a `NEXT_PUBLIC_API_URL`. En local, deja `npm run dev` levantado en otra terminal o apunta la variable a la demo. Si la API no responde, el build falla en lugar de publicar una página rota.
 
 **E2E:** la primera vez instala el navegador con `npx playwright install chromium`. En local, Playwright arranca `npm run dev` (o reutiliza el que ya tengas en marcha); en CI usa el build de producción.
 
@@ -86,14 +85,23 @@ e2e/                                 # Playwright (escritorio y móvil)
 - envuelve cualquier fallo en un `ApiError` con el endpoint, el status y la causa original: red, timeout de 5 s, status HTTP o JSON inválido;
 - valida la forma de los datos en tiempo de ejecución: números finitos, `min < max` y al menos dos valores fijos en orden ascendente.
 
-**Caché y rendimiento.** Las funciones del servicio usan `"use cache"` con `cacheLife("hours")`. Por eso `/exercise1` y `/exercise2` se prerenderizan con el rango ya dentro de la página estática, se sirven desde la CDN y se regeneran cada hora (en la tabla del build aparecen con _Revalidate 1h_). No hay skeleton al cargar ni ninguna función ejecutándose por cada visita.
+**Servicio solo de servidor.** `range.api.ts` importa `server-only`: si un Client Component lo importara, el build fallaría.
 
-**Carga y errores.** Cada rango va dentro de un `ErrorBoundary` y un `Suspense`:
+**Renderizado: shell estático y datos en cada petición.** Con `cacheComponents`, Next hace _Partial Prerendering_ (en la tabla del build, `/exercise1` y `/exercise2` aparecen con ◐):
 
-- el fallback es `RangeSkeleton`, que reproduce la rejilla y las alturas del componente para no provocar saltos de layout (CLS);
+- el título, el enlace de vuelta y el `RangeSkeleton` se prerenderizan en el build y se sirven desde la CDN;
+- las funciones del servicio llaman a `await connection()` antes del `fetch`, así que los datos no se piden nunca al compilar, sino en cada petición, y el rango llega por streaming dentro de su `Suspense`.
+
+Por eso el build no necesita la API levantada.
+
+**Carga y errores.** Cada rango va dentro de un `ErrorBoundary` y un `Suspense`, y los dos actúan en producción porque los datos se piden en cada visita:
+
+- mientras llegan los datos se ve `RangeSkeleton`, que reproduce la rejilla y las alturas del componente para no provocar saltos de layout (CLS);
 - si falla la carga, `ErrorState` muestra un mensaje propio (no el detalle técnico del error) y un botón "Reintentar" que vuelve a pedir los datos. El título y el enlace de vuelta siguen visibles.
 
-**Modo fijo con índices.** En modo `fixed`, el hook trabaja con las posiciones de la lista (de `0` a `n - 1`) y el componente las traduce a precios. Así los dos modos comparten exactamente la misma lógica de arrastre, teclado y límites.
+Para verlo en local: `npm run build` y después `API_URL=http://localhost:9999 npm start`. La app sigue en el 8080, pero el servicio apunta a un puerto donde no escucha nada.
+
+**Modo fijo con índices.** En modo `fixed`, el hook trabaja con las posiciones de la lista (de `0` a `n - 1`) y el componente las traduce a precios. Así los dos modos comparten exactamente la misma lógica de arrastre, teclado y límites. La barra muestra una marca por cada valor posible, para que se vea que el tirador salta entre posiciones fijas. Las marcas están separadas por índice, no en proporción al precio: cada opción ocupa el mismo espacio y se puede pulsar aunque los precios estén muy juntos.
 
 ## API del componente
 
@@ -107,13 +115,57 @@ import { Range } from "@/components/range/range";
 
 `RangeProps` es una unión discriminada por `mode`: TypeScript no deja combinar `min`/`max` con `values`.
 
+Además, los dos modos aceptan una API controlada o no controlada con los mismos nombres que [Radix Slider](https://www.radix-ui.com/primitives/docs/components/slider). El valor es una tupla `RangeValue = [min, max]` y siempre son **precios**, también en modo fijo (internamente se trabaja con índices):
+
+| Prop            | Tipo                          | Para qué                                                                                                                             |
+| --------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `defaultValue`  | `RangeValue`                  | Valor inicial si el componente no está controlado. Por defecto, los límites.                                                         |
+| `value`         | `RangeValue`                  | Valor controlado. El padre lo actualiza en `onValueChange`.                                                                          |
+| `onValueChange` | `(value: RangeValue) => void` | Cada cambio, también durante el arrastre. Sirve para pintar.                                                                         |
+| `onValueCommit` | `(value: RangeValue) => void` | Una vez al terminar: al soltar el tirador (solo si el valor cambió), con cada tecla o al confirmar una etiqueta. Sirve para filtrar. |
+
+Separar los dos eventos evita lanzar una búsqueda por cada píxel del arrastre. Si un valor no es válido, se ajusta igual que la entrada del usuario: dentro de los límites, sin cruzarse y, en modo fijo, al precio más cercano de la lista.
+
+Ejemplo de sincronización con la URL. Las funciones no pueden pasar de un Server Component a uno de cliente, así que hace falta un pequeño wrapper `"use client"`:
+
+```tsx
+"use client";
+
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Range } from "@/components/range/range";
+
+export function PriceFilter({ min, max }: { min: number; max: number }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  return (
+    <Range
+      mode="normal"
+      min={min}
+      max={max}
+      defaultValue={[
+        Number(searchParams.get("minPrice") ?? min),
+        Number(searchParams.get("maxPrice") ?? max),
+      ]}
+      onValueCommit={([minPrice, maxPrice]) => {
+        const params = new URLSearchParams(searchParams);
+        params.set("minPrice", String(minPrice));
+        params.set("maxPrice", String(maxPrice));
+        router.replace(`${pathname}?${params}`, { scroll: false });
+      }}
+    />
+  );
+}
+```
+
 Comportamiento común a los dos modos:
 
 - Los tiradores nunca salen de los límites ni se cruzan.
 - Al pasar el ratón o arrastrar, el tirador se agranda y cambia el cursor.
 - Se pueden arrastrar con ratón o con el dedo, y moverse con el teclado.
 
-En modo `normal`, al hacer clic en una etiqueta aparece un campo para escribir el valor:
+En modo `normal`, las etiquetas tienen siempre aspecto de campo (borde visible, no solo al pasar el ratón), así que también se ve que son editables en táctil. Al hacer clic aparece un campo para escribir el valor, con el `€` al lado y sin las flechas nativas de `type="number"`. Los dos estados miden lo mismo, así que no hay saltos de layout:
 
 - **Enter o salir del campo** confirma. El valor se redondea y se ajusta a los límites.
 - **Escape** cancela.
@@ -145,34 +197,35 @@ La estrategia evita probar lo mismo en varios niveles:
 | Integración | Vitest + Testing Library | La API pública de `<Range>` en los dos modos, las etiquetas, el skeleton y el error boundary, consultando por rol como un usuario.           |
 | E2E         | Playwright               | Lo que solo se puede comprobar en un navegador real: arrastre con ratón y con el dedo, hover, cursores, teclado, zona táctil y layout móvil. |
 
-- **Volumen:** 137 tests unitarios y de integración, y 20 E2E (14 de escritorio y 6 de móvil en un Pixel 7 emulado).
+- **Volumen:** 158 tests unitarios y de integración, y 21 E2E (15 de escritorio y 6 de móvil en un Pixel 7 emulado).
 - **Cobertura:** el informe de Vitest deja fuera `layout`, `page` y los componentes que piden los datos, porque solo componen piezas ya probadas y los cubren los E2E. En el resto se exige un mínimo del 90 % y ahora mismo está al 100 %.
 
 ## CI/CD
 
-- **GitHub Actions** (`.github/workflows/ci.yml`) se ejecuta en cada PR y en cada push a `main`:
+- **GitHub Actions** (`.github/workflows/ci.yml`) se ejecuta en cada PR contra `main`. No se repite al mergear, porque lo que entra en `main` ya se ha probado tal cual en el PR:
   - `checks`: lint, Prettier, typecheck, tests con umbrales de cobertura y build;
   - `e2e`: build de producción y Playwright en Chromium. Si falla, sube el informe como artefacto.
-- **Protección de `main`:** no se puede mergear sin `checks` y `e2e` en verde.
-- **Vercel** despliega `main` en producción y cada PR en un entorno de preview. `NEXT_PUBLIC_API_URL` apunta a la URL de producción en todos los entornos.
+- **Protección de `main`** (ruleset): no se puede hacer push directo, solo mergear un PR con `checks` y `e2e` en verde y la rama al día con `main`. Tampoco se permiten force push ni borrar la rama.
+- **Vercel** despliega `main` en producción y cada PR en un entorno de preview. `API_URL` se define en las variables de entorno del proyecto en Vercel. En CI, el job `e2e` la apunta a `localhost:8080`, así que los E2E prueban el mock del propio PR.
 
 ## Flujo de trabajo con git
 
 - **Ramas** `<tipo>/<tema>` (por ejemplo, `feat/range-accessibility` o `refactor/range-structure`), una por cambio que se pueda revisar por separado.
 - **Commits** con [Conventional Commits](https://www.conventionalcommits.org/): pequeños, con sus tests y dejando el repositorio en verde.
-- **Integración:** cada rama entra en `main` mediante un PR con merge commit. El historial completo está en los PR #1–#11.
+- **Integración:** cada rama entra en `main` mediante un PR con merge commit. El historial completo está en los PR del repositorio.
 
 ## Decisiones y trade-offs
 
-- **El mock vive dentro de la propia app**, como Route Handlers. No hay dependencias externas y el contrato HTTP es real. La contrapartida es que el build necesita una API accesible, porque prerenderiza los datos. En un proyecto real, la API sería un servicio aparte y esto no supondría ningún problema.
-- **Prerender con revalidación horaria en vez de renderizar en cada petición.** En plataformas serverless, la caché en memoria de `"use cache"` no se mantiene entre instancias. Prerenderizar da HTML completo desde la CDN, mejor LCP y sin skeleton.
-- **YAGNI en la API pública.** No hay `value`/`onChange`, `step` ni props de internacionalización porque hoy no los usa nadie. Las props solo se amplían cuando aparece un caso real.
-- **El arrastre escucha los eventos de puntero en `window`**, de modo que sigue aunque el puntero salga del tirador, y se cancela con `pointercancel`. `setPointerCapture` sería una alternativa más localizada.
+- **El mock vive dentro de la propia app**, como Route Handlers. No hay dependencias externas y el contrato HTTP es real. La contrapartida es que el servidor se hace una petición HTTP a sí mismo, un salto de red que Next desaconseja. En un proyecto real la API sería un servicio aparte y este `fetch` sería el correcto.
+- **Datos en cada petición en vez de `"use cache"`.** Antes los datos se prerenderizaban y se revalidaban cada hora: la página llegaba completa desde la CDN, pero el `Suspense` y el `ErrorBoundary` no llegaban a actuar en producción y el build dependía de una API levantada. Ahora solo el shell es estático: se ve un skeleton breve a cambio de datos siempre frescos, errores gestionados de verdad y un build independiente de la API. Si el rango cambiara poco y el tráfico fuera alto, volvería a cachear con `"use cache"` y `cacheLife`.
+- **API pública mínima.** Solo se ha añadido lo necesario para usar el componente como filtro (`value`, `defaultValue`, `onValueChange` y `onValueCommit`, con los nombres de Radix). No hay `step` ni props de internacionalización porque hoy no los usa nadie: las props solo se amplían cuando aparece un caso real.
+- **Arrastre con captura de puntero.** Al pulsar un tirador se llama a `setPointerCapture`, así que el tirador sigue recibiendo los eventos aunque el puntero salga de él o de la ventana, sin listeners en `window`. Solo arranca con el botón principal (no con clic derecho ni central) y se guarda el `pointerId`: un segundo dedo no puede quitarle el tirador al primero. Termina con `pointerup`, `pointercancel` o `lostpointercapture`.
+- **Coste de cada `pointermove`.** La posición de la barra se lee una vez al empezar a arrastrar, no en cada movimiento, y `moveHandle` devuelve el mismo objeto si el valor no cambia, así que React solo vuelve a renderizar cuando el tirador cambia de valor. No hace falta `requestAnimationFrame`: los navegadores ya agrupan los `pointermove` a uno por frame.
 
 ## Siguientes pasos
 
-- **Uso como filtro:** API controlada (`value`, `defaultValue`, `onValueChange` y `onValueCommit` al soltar) cuando el componente tenga que filtrar productos, por ejemplo sincronizado con los parámetros de la URL.
-- **Internacionalización:** formato de precios con `Intl.NumberFormat` según el idioma y la moneda (por ejemplo, `1,99 €`), y textos y etiquetas recibidos por props.
+- **Filtro de productos:** usar `onValueCommit` para sincronizar el rango con los parámetros de la URL (ver el ejemplo de arriba) y que el listado se filtre en el servidor.
+- **Internacionalización:** los precios ya se formatean con `Intl.NumberFormat` en `es-ES` (`1 €`, `1,99 €`). Falta recibir el idioma, la moneda y los textos de las etiquetas por props o contexto (por ejemplo, `€1.99` en Irlanda).
 - **Prop `step`** para pasos distintos de 1 o para céntimos.
 - **Etiquetas de solo lectura con contexto** para los lectores de pantalla (mínimo y máximo).
 - **Design system como paquete independiente:** extraerlo a `packages/ui` en un monorepo, con Storybook y tests visuales.

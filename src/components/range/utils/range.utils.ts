@@ -39,8 +39,27 @@ export function getPercentFromPointer(
   return clamp(percent, 0, 100);
 }
 
+/** Índice del valor de la lista más cercano a `target`. */
+export function getClosestIndex(values: number[], target: number): number {
+  return values.reduce(
+    (closest, value, index) =>
+      Math.abs(value - target) < Math.abs(values[closest] - target)
+        ? index
+        : closest,
+    0,
+  );
+}
+
+// Formato de precio en español: "1 €", "1,99 €" (con espacio duro antes del
+// símbolo). Los enteros se muestran sin ",00".
+const currencyFormatter = new Intl.NumberFormat("es-ES", {
+  style: "currency",
+  currency: "EUR",
+  trailingZeroDisplay: "stripIfInteger",
+});
+
 export function formatCurrency(value: number): string {
-  return `${value}€`;
+  return currencyFormatter.format(value);
 }
 
 export function clampRange(
@@ -55,6 +74,8 @@ export function clampRange(
   return { min, max };
 }
 
+// Devuelve el mismo objeto si el valor no cambia, para que React pueda saltarse
+// el render (p. ej. en los `pointermove` que no llegan a cambiar de valor).
 export function moveHandle(
   selected: SelectedRange,
   handle: Handle,
@@ -62,10 +83,14 @@ export function moveHandle(
   bounds: SelectedRange,
 ): SelectedRange {
   if (handle === "min") {
-    return { ...selected, min: clamp(value, bounds.min, selected.max - 1) };
+    const min = clamp(value, bounds.min, selected.max - 1);
+
+    return min === selected.min ? selected : { ...selected, min };
   }
 
-  return { ...selected, max: clamp(value, selected.min + 1, bounds.max) };
+  const max = clamp(value, selected.min + 1, bounds.max);
+
+  return max === selected.max ? selected : { ...selected, max };
 }
 
 export function getKeyboardValue(

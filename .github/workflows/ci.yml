@@ -1,9 +1,10 @@
 name: CI
 
+# Solo en PR: el ruleset de `main` exige PR, estos checks en verde y la rama
+# al día, así que lo que entra en `main` ya se ha probado tal cual. Repetirlo
+# en el push del merge solo duplicaría la ejecución.
 on:
   pull_request:
-    branches: [main]
-  push:
     branches: [main]
 
 concurrency:
@@ -14,16 +15,12 @@ jobs:
   checks:
     name: checks
     runs-on: ubuntu-latest
-    env:
-      # El build prerenderiza los datos del rango, así que necesita una API
-      # accesible: se usa el mock HTTP del despliegue de producción.
-      NEXT_PUBLIC_API_URL: https://mango-range-9cri.vercel.app
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
 
       - run: npm ci
@@ -37,15 +34,15 @@ jobs:
     name: e2e
     runs-on: ubuntu-latest
     env:
-      # El build prerenderiza los datos del rango, así que necesita una API
-      # accesible: se usa el mock HTTP del despliegue de producción.
-      NEXT_PUBLIC_API_URL: https://mango-range-9cri.vercel.app
+      # La app sirve su propio mock, así que los E2E prueban la API de este
+      # mismo PR y no la de producción.
+      API_URL: http://localhost:8080
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
 
       - run: npm ci

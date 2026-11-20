@@ -8,7 +8,7 @@ describe("RangeLabel", () => {
   it("muestra el valor formateado como precio", () => {
     render(<RangeLabel label="Precio mínimo" value={5.99} />);
 
-    expect(screen.getByText("5.99€")).toBeInTheDocument();
+    expect(screen.getByText("5,99 €")).toBeInTheDocument();
   });
 
   it("no se puede editar si no recibe onValueChange", () => {
@@ -23,7 +23,7 @@ describe("RangeLabel", () => {
     );
 
     expect(
-      screen.getByRole("button", { name: "Editar precio mínimo: 1€" }),
+      screen.getByRole("button", { name: "Editar precio mínimo: 1\u00a0€" }),
     ).toBeInTheDocument();
   });
 });

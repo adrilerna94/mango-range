@@ -2,8 +2,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiError, getRangeLimits, getRangeValues } from "./range.api";
 
-// `cacheLife` solo funciona dentro del runtime de Next.
-vi.mock("next/cache", () => ({ cacheLife: vi.fn() }));
+// `server-only` lanza un error fuera de un entorno de React Server Components y
+// `connection` solo funciona dentro de una petición de Next.
+vi.mock("server-only", () => ({}));
+vi.mock("next/server", () => ({ connection: vi.fn() }));
 
 function mockFetch(body: unknown, status = 200) {
   const fetchMock = vi
@@ -23,6 +25,7 @@ function mockNetworkError(error: Error) {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 describe("getRangeLimits", () => {
@@ -147,5 +150,22 @@ describe("validación de los datos", () => {
     mockFetch(body);
 
     await expect(getRangeValues()).rejects.toThrow("formato inesperado");
+  });
+});
+
+describe("URL base de la API", () => {
+  it("llama a la URL de la variable API_URL", async () => {
+    vi.stubEnv("API_URL", "https://api.example.com");
+    // API_URL se lee al cargar el módulo: hay que volver a importarlo.
+    vi.resetModules();
+    const { getRangeLimits } = await import("./range.api");
+    const fetchMock = mockFetch({ min: 1, max: 100 });
+
+    await getRangeLimits();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.example.com/api/range",
+      expect.anything(),
+    );
   });
 });

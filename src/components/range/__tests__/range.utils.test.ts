@@ -3,6 +3,7 @@ import {
   clamp,
   clampRange,
   formatCurrency,
+  getClosestIndex,
   getKeyboardValue,
   getPercentFromPointer,
   moveHandle,
@@ -79,13 +80,27 @@ describe("getPercentFromPointer", () => {
   });
 });
 
-describe("formatCurrency", () => {
-  it("formatea un entero", () => {
-    expect(formatCurrency(1)).toBe("1€");
+describe("getClosestIndex", () => {
+  const values = [1.99, 5.99, 10.99];
+
+  it("devuelve el índice de un valor de la lista", () => {
+    expect(getClosestIndex(values, 5.99)).toBe(1);
   });
 
-  it("formatea un decimal", () => {
-    expect(formatCurrency(5.99)).toBe("5.99€");
+  it("ajusta un valor que no está en la lista al más cercano", () => {
+    expect(getClosestIndex(values, 9)).toBe(2);
+    expect(getClosestIndex(values, 0)).toBe(0);
+    expect(getClosestIndex(values, 100)).toBe(2);
+  });
+});
+
+describe("formatCurrency", () => {
+  it("formatea un entero sin decimales y con el símbolo detrás", () => {
+    expect(formatCurrency(1)).toBe("1\u00a0€");
+  });
+
+  it("usa la coma decimal del español", () => {
+    expect(formatCurrency(5.99)).toBe("5,99\u00a0€");
   });
 });
 
@@ -114,6 +129,17 @@ describe("clampRange", () => {
 });
 
 describe("moveHandle", () => {
+  it.each(["min", "max"] as const)(
+    "devuelve el mismo objeto si el tirador %s no cambia de valor",
+    (handle) => {
+      const selected = { min: 20, max: 80 };
+
+      expect(moveHandle(selected, handle, selected[handle], BOUNDS)).toBe(
+        selected,
+      );
+    },
+  );
+
   it("mueve el tirador mínimo", () => {
     expect(moveHandle({ min: 0, max: 100 }, "min", 30, BOUNDS)).toEqual({
       min: 30,

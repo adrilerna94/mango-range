@@ -24,8 +24,8 @@
   },
   "include": [
     "src",
-    "vitest.config.ts",
-    "vitest.setup.mts",
+    "vitest.config.mts",
+    "vitest.setup.ts",
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",

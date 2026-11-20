@@ -1,4 +1,7 @@
-import { cacheLife } from "next/cache";
+// Si un Client Component importa este módulo, el build falla: el servicio
+// solo se ejecuta en el servidor.
+import "server-only";
+import { connection } from "next/server";
 
 export type RangeLimits = {
   min: number;
@@ -9,7 +12,9 @@ export type RangeValues = {
   rangeValues: number[];
 };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+// URL base del servicio: en local, la propia app (.env.local); en Vercel, la
+// variable de entorno del proyecto.
+const API_URL = process.env.API_URL;
 const TIMEOUT_MS = 5000;
 
 export class ApiError extends Error {
@@ -104,20 +109,18 @@ async function fetchJson<T>(
   return data;
 }
 
-// Los datos se prerenderizan en el build dentro de la página estática y se
-// revalidan cada hora (perfil "hours" de Next): la página se sirve completa desde
-// la CDN, sin skeleton. Por eso `next build` necesita la API accesible en
-// NEXT_PUBLIC_API_URL.
+// Los datos se piden en cada petición. `connection()` evita que se llamen al
+// prerenderizar: el shell de la página (título, enlace y skeleton) es estático
+// y el rango llega por streaming dentro de su <Suspense>. Si la API falla, lo
+// recoge el ErrorBoundary de la página.
 export async function getRangeLimits(): Promise<RangeLimits> {
-  "use cache";
-  cacheLife("hours");
+  await connection();
 
   return fetchJson("/api/range", isRangeLimits);
 }
 
 export async function getRangeValues(): Promise<RangeValues> {
-  "use cache";
-  cacheLife("hours");
+  await connection();
 
   return fetchJson("/api/range-values", isRangeValues);
 }

@@ -3,15 +3,40 @@
 import { RangeHandle } from "./range-handle";
 import { RangeLabel } from "./range-label";
 import { useRange } from "./hooks/use-range";
-import { formatCurrency, valueToPercent } from "./utils/range.utils";
+import {
+  formatCurrency,
+  getClosestIndex,
+  valueToPercent,
+  type SelectedRange,
+} from "./utils/range.utils";
 
-type NormalRangeProps = {
+/** Precios seleccionados: `[mínimo, máximo]`. */
+export type RangeValue = [min: number, max: number];
+
+// API controlada o no controlada, como Radix Slider. Los valores son siempre
+// precios, también en modo fijo.
+type RangeValueProps = {
+  /** Valor controlado: el padre lo actualiza en `onValueChange`. */
+  value?: RangeValue;
+  /** Valor inicial si el componente no está controlado. */
+  defaultValue?: RangeValue;
+  /** Se llama en cada cambio, también durante el arrastre (para pintar). */
+  onValueChange?: (value: RangeValue) => void;
+  /**
+   * Se llama una vez al terminar la interacción: al soltar el tirador, con
+   * cada tecla o al confirmar una etiqueta (p. ej. para filtrar o sincronizar
+   * la URL).
+   */
+  onValueCommit?: (value: RangeValue) => void;
+};
+
+type NormalRangeProps = RangeValueProps & {
   mode: "normal";
   min: number;
   max: number;
 };
 
-type FixedRangeProps = {
+type FixedRangeProps = RangeValueProps & {
   mode: "fixed";
   values: number[];
 };
@@ -26,7 +51,11 @@ function getRangeConfig(props: RangeProps) {
       min: 0,
       max: values.length - 1,
       isEditable: false,
+      // Una marca en la barra por cada valor posible.
+      markCount: values.length,
       getPrice: (index: number) => values[index],
+      // Un precio que no está en la lista se ajusta al más cercano.
+      toPosition: (price: number) => getClosestIndex(values, price),
     };
   }
 
@@ -34,12 +63,25 @@ function getRangeConfig(props: RangeProps) {
     min: props.min,
     max: props.max,
     isEditable: true,
+    markCount: 0,
     getPrice: (value: number) => value,
+    toPosition: (price: number) => price,
   };
 }
 
 export function Range(props: RangeProps) {
-  const { min, max, isEditable, getPrice } = getRangeConfig(props);
+  const { value, defaultValue, onValueChange, onValueCommit } = props;
+  const { min, max, isEditable, markCount, getPrice, toPosition } =
+    getRangeConfig(props);
+
+  // El hook trabaja con posiciones (índices en modo fijo); fuera, precios.
+  const toPositions = (range?: RangeValue): SelectedRange | undefined =>
+    range && { min: toPosition(range[0]), max: toPosition(range[1]) };
+  const toPrices = (range: SelectedRange): RangeValue => [
+    getPrice(range.min),
+    getPrice(range.max),
+  ];
+
   const {
     minValue,
     maxValue,
@@ -47,9 +89,16 @@ export function Range(props: RangeProps) {
     topHandle,
     trackRef,
     setValue,
-    startDragging,
+    getPointerHandlers,
     handleKeyDown,
-  } = useRange({ min, max });
+  } = useRange({
+    min,
+    max,
+    value: toPositions(value),
+    defaultValue: toPositions(defaultValue),
+    onValueChange: onValueChange && ((range) => onValueChange(toPrices(range))),
+    onValueCommit: onValueCommit && ((range) => onValueCommit(toPrices(range))),
+  });
 
   const minPrice = getPrice(minValue);
   const maxPrice = getPrice(maxValue);
@@ -87,6 +136,18 @@ export function Range(props: RangeProps) {
           }}
         />
 
+        {Array.from({ length: markCount }, (_, index) => (
+          <span
+            key={index}
+            aria-hidden="true"
+            data-range-mark=""
+            className={`pointer-events-none absolute size-2 -translate-x-1/2 rounded-full ring-2 ring-surface ${
+              index >= minValue && index <= maxValue ? "bg-accent" : "bg-border"
+            }`}
+            style={{ left: `${valueToPercent(index, min, max)}%` }}
+          />
+        ))}
+
         <RangeHandle
           label="Precio mínimo"
           value={minValue}
@@ -96,7 +157,7 @@ export function Range(props: RangeProps) {
           percent={minPercent}
           isDragging={activeHandle === "min"}
           isOnTop={topHandle === "min"}
-          onPointerDown={() => startDragging("min")}
+          {...getPointerHandlers("min")}
           onKeyDown={handleKeyDown("min")}
         />
 
@@ -109,7 +170,7 @@ export function Range(props: RangeProps) {
           percent={maxPercent}
           isDragging={activeHandle === "max"}
           isOnTop={topHandle === "max"}
-          onPointerDown={() => startDragging("max")}
+          {...getPointerHandlers("max")}
           onKeyDown={handleKeyDown("max")}
         />
       </div>

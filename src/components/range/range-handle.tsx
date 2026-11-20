@@ -1,6 +1,15 @@
-import type { KeyboardEvent, PointerEvent } from "react";
+import type { HTMLAttributes, KeyboardEvent } from "react";
 
-type RangeHandleProps = {
+type PointerHandlers = Pick<
+  HTMLAttributes<HTMLDivElement>,
+  | "onPointerDown"
+  | "onPointerMove"
+  | "onPointerUp"
+  | "onPointerCancel"
+  | "onLostPointerCapture"
+>;
+
+type RangeHandleProps = PointerHandlers & {
   label: string;
   value: number;
   min: number;
@@ -9,7 +18,6 @@ type RangeHandleProps = {
   percent: number;
   isDragging: boolean;
   isOnTop: boolean;
-  onPointerDown: (event: PointerEvent<HTMLDivElement>) => void;
   onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
 };
 
@@ -22,8 +30,8 @@ export function RangeHandle({
   percent,
   isDragging,
   isOnTop,
-  onPointerDown,
   onKeyDown,
+  ...pointerHandlers
 }: RangeHandleProps) {
   const stateClasses = isDragging
     ? "scale-125 cursor-grabbing"
@@ -40,8 +48,8 @@ export function RangeHandle({
       aria-valuenow={value}
       aria-valuetext={valueText}
       style={{ left: `${percent}%` }}
-      onPointerDown={onPointerDown}
       onKeyDown={onKeyDown}
+      {...pointerHandlers}
       // El punto mide 16px, pero el pseudo-elemento amplía la zona táctil a 44px.
       className={`absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 touch-none rounded-full bg-accent ring-2 ring-surface transition-transform before:absolute before:-inset-3.5 before:rounded-full before:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${layerClass} ${stateClasses}`}
     />
