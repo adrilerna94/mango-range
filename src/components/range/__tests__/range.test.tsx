@@ -66,10 +66,10 @@ describe("Range en modo normal: estado inicial", () => {
     renderRange();
 
     expect(
-      screen.getByRole("button", { name: /precio mínimo: 0€/i }),
+      screen.getByRole("button", { name: /precio mínimo: 0\u00a0€/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /precio máximo: 100€/i }),
+      screen.getByRole("button", { name: /precio máximo: 100\u00a0€/i }),
     ).toBeInTheDocument();
   });
 });
@@ -84,7 +84,7 @@ describe("Range en modo normal: edición de etiquetas", () => {
     expect(minHandle).toHaveAttribute("aria-valuenow", "30");
     expect(minHandle).toHaveStyle({ left: "30%" });
     expect(
-      screen.getByRole("button", { name: /precio mínimo: 30€/i }),
+      screen.getByRole("button", { name: /precio mínimo: 30\u00a0€/i }),
     ).toBeInTheDocument();
   });
 
@@ -150,8 +150,8 @@ describe("Range en modo fijo: estado inicial", () => {
   it("empieza con los tiradores en el primer y el último valor", () => {
     const { minHandle, maxHandle } = renderFixedRange();
 
-    expect(minHandle).toHaveAttribute("aria-valuetext", "1.99€");
-    expect(maxHandle).toHaveAttribute("aria-valuetext", "70.99€");
+    expect(minHandle).toHaveAttribute("aria-valuetext", "1,99\u00a0€");
+    expect(maxHandle).toHaveAttribute("aria-valuetext", "70,99\u00a0€");
   });
 
   it("usa la posición en la lista como valor numérico del slider", () => {
@@ -171,8 +171,8 @@ describe("Range en modo fijo: estado inicial", () => {
   it("muestra los precios como texto", () => {
     renderFixedRange();
 
-    expect(screen.getByText("1.99€")).toBeInTheDocument();
-    expect(screen.getByText("70.99€")).toBeInTheDocument();
+    expect(screen.getByText("1,99 €")).toBeInTheDocument();
+    expect(screen.getByText("70,99 €")).toBeInTheDocument();
   });
 
   it("no permite editar los precios", () => {
@@ -190,7 +190,7 @@ describe("Range en modo fijo: arrastre y teclado", () => {
     fireEvent.pointerDown(minHandle);
     movePointer(minHandle, 90);
 
-    expect(minHandle).toHaveAttribute("aria-valuetext", "10.99€");
+    expect(minHandle).toHaveAttribute("aria-valuetext", "10,99\u00a0€");
     expect(minHandle).toHaveStyle({ left: "40%" });
   });
 
@@ -201,7 +201,7 @@ describe("Range en modo fijo: arrastre y teclado", () => {
     fireEvent.pointerDown(minHandle);
     movePointer(minHandle, 90);
 
-    expect(screen.getByText("10.99€")).toBeInTheDocument();
+    expect(screen.getByText("10,99 €")).toBeInTheDocument();
   });
 
   it("no deja que los tiradores coincidan en el mismo valor", () => {
@@ -211,7 +211,7 @@ describe("Range en modo fijo: arrastre y teclado", () => {
     fireEvent.pointerDown(maxHandle);
     movePointer(maxHandle, 0);
 
-    expect(maxHandle).toHaveAttribute("aria-valuetext", "5.99€");
+    expect(maxHandle).toHaveAttribute("aria-valuetext", "5,99\u00a0€");
   });
 
   it("pasa al siguiente valor de la lista con las flechas", async () => {
@@ -221,8 +221,8 @@ describe("Range en modo fijo: arrastre y teclado", () => {
     minHandle.focus();
     await user.keyboard("{ArrowRight}");
 
-    expect(minHandle).toHaveAttribute("aria-valuetext", "5.99€");
-    expect(screen.getByText("5.99€")).toBeInTheDocument();
+    expect(minHandle).toHaveAttribute("aria-valuetext", "5,99\u00a0€");
+    expect(screen.getByText("5,99 €")).toBeInTheDocument();
   });
 
   it("con End se queda en el valor anterior al del otro tirador", async () => {
@@ -232,7 +232,7 @@ describe("Range en modo fijo: arrastre y teclado", () => {
     minHandle.focus();
     await user.keyboard("{End}");
 
-    expect(minHandle).toHaveAttribute("aria-valuetext", "50.99€");
+    expect(minHandle).toHaveAttribute("aria-valuetext", "50,99\u00a0€");
   });
 });
 
@@ -367,8 +367,8 @@ describe("Range: valor controlado y eventos", () => {
     );
     const { minHandle, maxHandle } = getHandles();
 
-    expect(minHandle).toHaveAttribute("aria-valuetext", "5.99€");
-    expect(maxHandle).toHaveAttribute("aria-valuetext", "50.99€");
+    expect(minHandle).toHaveAttribute("aria-valuetext", "5,99\u00a0€");
+    expect(maxHandle).toHaveAttribute("aria-valuetext", "50,99\u00a0€");
 
     minHandle.focus();
     await user.keyboard("{ArrowRight}");
@@ -381,6 +381,9 @@ describe("Range: valor controlado y eventos", () => {
       <Range mode="fixed" values={FIXED_VALUES} defaultValue={[6, 70.99]} />,
     );
 
-    expect(getHandles().minHandle).toHaveAttribute("aria-valuetext", "5.99€");
+    expect(getHandles().minHandle).toHaveAttribute(
+      "aria-valuetext",
+      "5,99\u00a0€",
+    );
   });
 });

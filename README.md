@@ -225,7 +225,7 @@ La estrategia evita probar lo mismo en varios niveles:
 ## Siguientes pasos
 
 - **Filtro de productos:** usar `onValueCommit` para sincronizar el rango con los parámetros de la URL (ver el ejemplo de arriba) y que el listado se filtre en el servidor.
-- **Internacionalización:** formato de precios con `Intl.NumberFormat` según el idioma y la moneda (por ejemplo, `1,99 €`), y textos y etiquetas recibidos por props.
+- **Internacionalización:** los precios ya se formatean con `Intl.NumberFormat` en `es-ES` (`1 €`, `1,99 €`). Falta recibir el idioma, la moneda y los textos de las etiquetas por props o contexto (por ejemplo, `€1.99` en Irlanda).
 - **Prop `step`** para pasos distintos de 1 o para céntimos.
 - **Etiquetas de solo lectura con contexto** para los lectores de pantalla (mínimo y máximo).
 - **Design system como paquete independiente:** extraerlo a `packages/ui` en un monorepo, con Storybook y tests visuales.

@@ -12,7 +12,7 @@ function renderHandle(props: Partial<Props> = {}) {
     value: 25,
     min: 0,
     max: 100,
-    valueText: "25€",
+    valueText: "25\u00a0€",
     percent: 25,
     isDragging: false,
     isOnTop: false,
@@ -36,13 +36,13 @@ describe("RangeHandle", () => {
       value: 2,
       min: 0,
       max: 5,
-      valueText: "10.99€",
+      valueText: "10,99\u00a0€",
     });
 
     expect(handle).toHaveAttribute("aria-valuenow", "2");
     expect(handle).toHaveAttribute("aria-valuemin", "0");
     expect(handle).toHaveAttribute("aria-valuemax", "5");
-    expect(handle).toHaveAttribute("aria-valuetext", "10.99€");
+    expect(handle).toHaveAttribute("aria-valuetext", "10,99\u00a0€");
   });
 
   it("se coloca según el porcentaje recibido", () => {

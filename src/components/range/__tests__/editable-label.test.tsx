@@ -20,8 +20,8 @@ describe("EditableLabel", () => {
     renderLabel();
 
     expect(
-      screen.getByRole("button", { name: "Editar precio mínimo: 1€" }),
-    ).toHaveTextContent("1€");
+      screen.getByRole("button", { name: "Editar precio mínimo: 1\u00a0€" }),
+    ).toHaveTextContent("1 €");
   });
 
   it("al hacer clic muestra un campo enfocado con el valor actual", async () => {
@@ -73,7 +73,9 @@ describe("EditableLabel", () => {
     await user.type(screen.getByRole("spinbutton"), "50{Escape}");
 
     expect(onValueChange).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: /1€/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /1\u00a0€/ }),
+    ).toBeInTheDocument();
   });
 
   it.each(["{Enter}", "{Escape}"])(

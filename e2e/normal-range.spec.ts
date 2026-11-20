@@ -9,13 +9,13 @@ test.describe("Ejercicio 1: rango normal", () => {
   test("carga los límites del servicio HTTP", async ({ page }) => {
     const { minHandle, maxHandle } = getHandles(page);
 
-    await expect(minHandle).toHaveAttribute("aria-valuetext", "1€");
-    await expect(maxHandle).toHaveAttribute("aria-valuetext", "100€");
+    await expect(minHandle).toHaveAttribute("aria-valuetext", "1\u00a0€");
+    await expect(maxHandle).toHaveAttribute("aria-valuetext", "100\u00a0€");
     await expect(
-      page.getByRole("button", { name: "Editar precio mínimo: 1€" }),
+      page.getByRole("button", { name: "Editar precio mínimo: 1\u00a0€" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Editar precio máximo: 100€" }),
+      page.getByRole("button", { name: "Editar precio máximo: 100\u00a0€" }),
     ).toBeVisible();
   });
 
@@ -79,7 +79,7 @@ test.describe("Ejercicio 1: rango normal", () => {
 
     await expect(minHandle).toHaveAttribute("aria-valuenow", "30");
     await expect(
-      page.getByRole("button", { name: "Editar precio mínimo: 30€" }),
+      page.getByRole("button", { name: "Editar precio mínimo: 30\u00a0€" }),
     ).toBeFocused();
   });
 

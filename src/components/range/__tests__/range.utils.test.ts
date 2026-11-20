@@ -95,12 +95,12 @@ describe("getClosestIndex", () => {
 });
 
 describe("formatCurrency", () => {
-  it("formatea un entero", () => {
-    expect(formatCurrency(1)).toBe("1€");
+  it("formatea un entero sin decimales y con el símbolo detrás", () => {
+    expect(formatCurrency(1)).toBe("1\u00a0€");
   });
 
-  it("formatea un decimal", () => {
-    expect(formatCurrency(5.99)).toBe("5.99€");
+  it("usa la coma decimal del español", () => {
+    expect(formatCurrency(5.99)).toBe("5,99\u00a0€");
   });
 });
 

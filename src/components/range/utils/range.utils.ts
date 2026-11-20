@@ -50,8 +50,16 @@ export function getClosestIndex(values: number[], target: number): number {
   );
 }
 
+// Formato de precio en español: "1 €", "1,99 €" (con espacio duro antes del
+// símbolo). Los enteros se muestran sin ",00".
+const currencyFormatter = new Intl.NumberFormat("es-ES", {
+  style: "currency",
+  currency: "EUR",
+  trailingZeroDisplay: "stripIfInteger",
+});
+
 export function formatCurrency(value: number): string {
-  return `${value}€`;
+  return currencyFormatter.format(value);
 }
 
 export function clampRange(

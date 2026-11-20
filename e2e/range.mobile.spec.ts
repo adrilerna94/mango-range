@@ -2,8 +2,12 @@ import { expect, test } from "@playwright/test";
 import { dragWithTouch, getHandles } from "./helpers";
 
 for (const { path, from, to } of [
-  { path: "/exercise1", from: "1€", to: /^(?!1€$)\d+€$/ },
-  { path: "/exercise2", from: "1.99€", to: /^(?!1\.99€$)[\d.]+€$/ },
+  { path: "/exercise1", from: "1\u00a0€", to: /^(?!1\u00a0€$)\d+\u00a0€$/ },
+  {
+    path: "/exercise2",
+    from: "1,99\u00a0€",
+    to: /^(?!1,99\u00a0€$)[\d,]+\u00a0€$/,
+  },
 ]) {
   test.describe(`Móvil ${path}`, () => {
     test.beforeEach(async ({ page }) => {
