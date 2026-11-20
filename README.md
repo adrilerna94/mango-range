@@ -151,10 +151,10 @@ La estrategia evita probar lo mismo en varios niveles:
 
 ## CI/CD
 
-- **GitHub Actions** (`.github/workflows/ci.yml`) se ejecuta en cada PR y en cada push a `main`:
+- **GitHub Actions** (`.github/workflows/ci.yml`) se ejecuta en cada PR contra `main`. No se repite al mergear, porque lo que entra en `main` ya se ha probado tal cual en el PR:
   - `checks`: lint, Prettier, typecheck, tests con umbrales de cobertura y build;
   - `e2e`: build de producción y Playwright en Chromium. Si falla, sube el informe como artefacto.
-- **Protección de `main`:** no se puede mergear sin `checks` y `e2e` en verde.
+- **Protección de `main`** (ruleset): no se puede hacer push directo, solo mergear un PR con `checks` y `e2e` en verde y la rama al día con `main`. Tampoco se permiten force push ni borrar la rama.
 - **Vercel** despliega `main` en producción y cada PR en un entorno de preview. `NEXT_PUBLIC_API_URL` apunta a la URL de producción en todos los entornos.
 
 ## Flujo de trabajo con git

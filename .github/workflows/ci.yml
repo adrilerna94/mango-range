@@ -1,9 +1,10 @@
 name: CI
 
+# Solo en PR: el ruleset de `main` exige PR, estos checks en verde y la rama
+# al día, así que lo que entra en `main` ya se ha probado tal cual. Repetirlo
+# en el push del merge solo duplicaría la ejecución.
 on:
   pull_request:
-    branches: [main]
-  push:
     branches: [main]
 
 concurrency:
