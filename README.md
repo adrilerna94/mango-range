@@ -101,7 +101,7 @@ Por eso el build no necesita la API levantada.
 
 Para verlo en local: `npm run build` y después `API_URL=http://localhost:9999 npm start`. La app sigue en el 8080, pero el servicio apunta a un puerto donde no escucha nada.
 
-**Modo fijo con índices.** En modo `fixed`, el hook trabaja con las posiciones de la lista (de `0` a `n - 1`) y el componente las traduce a precios. Así los dos modos comparten exactamente la misma lógica de arrastre, teclado y límites.
+**Modo fijo con índices.** En modo `fixed`, el hook trabaja con las posiciones de la lista (de `0` a `n - 1`) y el componente las traduce a precios. Así los dos modos comparten exactamente la misma lógica de arrastre, teclado y límites. La barra muestra una marca por cada valor posible, para que se vea que el tirador salta entre posiciones fijas. Las marcas están separadas por índice, no en proporción al precio: cada opción ocupa el mismo espacio y se puede pulsar aunque los precios estén muy juntos.
 
 ## API del componente
 
@@ -197,7 +197,7 @@ La estrategia evita probar lo mismo en varios niveles:
 | Integración | Vitest + Testing Library | La API pública de `<Range>` en los dos modos, las etiquetas, el skeleton y el error boundary, consultando por rol como un usuario.           |
 | E2E         | Playwright               | Lo que solo se puede comprobar en un navegador real: arrastre con ratón y con el dedo, hover, cursores, teclado, zona táctil y layout móvil. |
 
-- **Volumen:** 137 tests unitarios y de integración, y 20 E2E (14 de escritorio y 6 de móvil en un Pixel 7 emulado).
+- **Volumen:** 158 tests unitarios y de integración, y 21 E2E (15 de escritorio y 6 de móvil en un Pixel 7 emulado).
 - **Cobertura:** el informe de Vitest deja fuera `layout`, `page` y los componentes que piden los datos, porque solo componen piezas ya probadas y los cubren los E2E. En el resto se exige un mínimo del 90 % y ahora mismo está al 100 %.
 
 ## CI/CD
@@ -212,7 +212,7 @@ La estrategia evita probar lo mismo en varios niveles:
 
 - **Ramas** `<tipo>/<tema>` (por ejemplo, `feat/range-accessibility` o `refactor/range-structure`), una por cambio que se pueda revisar por separado.
 - **Commits** con [Conventional Commits](https://www.conventionalcommits.org/): pequeños, con sus tests y dejando el repositorio en verde.
-- **Integración:** cada rama entra en `main` mediante un PR con merge commit. El historial completo está en los PR #1–#11.
+- **Integración:** cada rama entra en `main` mediante un PR con merge commit. El historial completo está en los PR del repositorio.
 
 ## Decisiones y trade-offs
 

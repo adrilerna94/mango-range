@@ -48,6 +48,12 @@ describe("Range en modo normal: estado inicial", () => {
     ).toBeInTheDocument();
   });
 
+  it("no pinta marcas en la barra", () => {
+    renderRange();
+
+    expect(document.querySelectorAll("[data-range-mark]")).toHaveLength(0);
+  });
+
   it("empieza con los tiradores en los límites", () => {
     const { minHandle, maxHandle } = renderRange();
 
@@ -173,6 +179,14 @@ describe("Range en modo fijo: estado inicial", () => {
 
     expect(screen.getByText("1,99 €")).toBeInTheDocument();
     expect(screen.getByText("70,99 €")).toBeInTheDocument();
+  });
+
+  it("marca en la barra cada valor posible", () => {
+    renderFixedRange();
+
+    expect(document.querySelectorAll("[data-range-mark]")).toHaveLength(
+      FIXED_VALUES.length,
+    );
   });
 
   it("no permite editar los precios", () => {

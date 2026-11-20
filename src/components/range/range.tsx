@@ -51,6 +51,8 @@ function getRangeConfig(props: RangeProps) {
       min: 0,
       max: values.length - 1,
       isEditable: false,
+      // Una marca en la barra por cada valor posible.
+      markCount: values.length,
       getPrice: (index: number) => values[index],
       // Un precio que no está en la lista se ajusta al más cercano.
       toPosition: (price: number) => getClosestIndex(values, price),
@@ -61,6 +63,7 @@ function getRangeConfig(props: RangeProps) {
     min: props.min,
     max: props.max,
     isEditable: true,
+    markCount: 0,
     getPrice: (value: number) => value,
     toPosition: (price: number) => price,
   };
@@ -68,7 +71,8 @@ function getRangeConfig(props: RangeProps) {
 
 export function Range(props: RangeProps) {
   const { value, defaultValue, onValueChange, onValueCommit } = props;
-  const { min, max, isEditable, getPrice, toPosition } = getRangeConfig(props);
+  const { min, max, isEditable, markCount, getPrice, toPosition } =
+    getRangeConfig(props);
 
   // El hook trabaja con posiciones (índices en modo fijo); fuera, precios.
   const toPositions = (range?: RangeValue): SelectedRange | undefined =>
@@ -131,6 +135,18 @@ export function Range(props: RangeProps) {
             width: `${maxPercent - minPercent}%`,
           }}
         />
+
+        {Array.from({ length: markCount }, (_, index) => (
+          <span
+            key={index}
+            aria-hidden="true"
+            data-range-mark=""
+            className={`pointer-events-none absolute size-2 -translate-x-1/2 rounded-full ring-2 ring-surface ${
+              index >= minValue && index <= maxValue ? "bg-accent" : "bg-border"
+            }`}
+            style={{ left: `${valueToPercent(index, min, max)}%` }}
+          />
+        ))}
 
         <RangeHandle
           label="Precio mínimo"
