@@ -16,9 +16,10 @@ Los datos de los dos ejercicios llegan de un servicio HTTP mockeado:
 
 ## Puesta en marcha
 
-Requisitos: Node.js 22 o superior y npm.
+Requisitos: Node.js 22 o superior y npm. La versión está fijada en `.nvmrc` (y en `engines` de `package.json`), así que con nvm basta con `nvm use`.
 
 ```bash
+nvm use                      # opcional, lee .nvmrc
 npm ci
 cp .env.example .env.local
 npm run dev                  # http://localhost:8080
