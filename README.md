@@ -206,7 +206,7 @@ La estrategia evita probar lo mismo en varios niveles:
   - `checks`: lint, Prettier, typecheck, tests con umbrales de cobertura y build;
   - `e2e`: build de producción y Playwright en Chromium. Si falla, sube el informe como artefacto.
 - **Protección de `main`** (ruleset): no se puede hacer push directo, solo mergear un PR con `checks` y `e2e` en verde y la rama al día con `main`. Tampoco se permiten force push ni borrar la rama.
-- **Vercel** despliega `main` en producción y cada PR en un entorno de preview. En producción, `API_URL` se define en el panel de Vercel. En los previews no hace falta: se usa `VERCEL_URL`, la URL del propio despliegue, así que cada preview prueba su propio mock.
+- **Vercel** despliega `main` en producción y cada PR en un entorno de preview. `API_URL` se define en las variables de entorno del proyecto en Vercel. En CI, el job `e2e` la apunta a `localhost:8080`, así que los E2E prueban el mock del propio PR.
 
 ## Flujo de trabajo con git
 

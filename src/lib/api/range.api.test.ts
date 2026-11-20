@@ -154,35 +154,18 @@ describe("validación de los datos", () => {
 });
 
 describe("URL base de la API", () => {
-  // API_URL se lee al cargar el módulo: cada caso lo vuelve a importar.
-  async function requestedUrl() {
+  it("llama a la URL de la variable API_URL", async () => {
+    vi.stubEnv("API_URL", "https://api.example.com");
+    // API_URL se lee al cargar el módulo: hay que volver a importarlo.
     vi.resetModules();
     const { getRangeLimits } = await import("./range.api");
     const fetchMock = mockFetch({ min: 1, max: 100 });
 
     await getRangeLimits();
 
-    return fetchMock.mock.calls[0][0];
-  }
-
-  it("usa API_URL si está definida", async () => {
-    vi.stubEnv("API_URL", "https://api.example.com");
-    vi.stubEnv("VERCEL_URL", "preview.vercel.app");
-
-    expect(await requestedUrl()).toBe("https://api.example.com/api/range");
-  });
-
-  it("usa la URL del despliegue de Vercel si no hay API_URL", async () => {
-    vi.stubEnv("API_URL", undefined);
-    vi.stubEnv("VERCEL_URL", "preview.vercel.app");
-
-    expect(await requestedUrl()).toBe("https://preview.vercel.app/api/range");
-  });
-
-  it("usa la propia app en local", async () => {
-    vi.stubEnv("API_URL", undefined);
-    vi.stubEnv("VERCEL_URL", undefined);
-
-    expect(await requestedUrl()).toBe("http://localhost:8080/api/range");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.example.com/api/range",
+      expect.anything(),
+    );
   });
 });

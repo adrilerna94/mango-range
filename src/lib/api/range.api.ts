@@ -12,14 +12,9 @@ export type RangeValues = {
   rangeValues: number[];
 };
 
-// API_URL se define en el hosting (producción). En los previews de Vercel se
-// usa la URL del propio despliegue, así que cada preview prueba su propio mock.
-// En local es la propia app.
-const API_URL =
-  process.env.API_URL ??
-  (process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "http://localhost:8080");
+// URL base del servicio: en local, la propia app (.env.local); en Vercel, la
+// variable de entorno del proyecto.
+const API_URL = process.env.API_URL;
 const TIMEOUT_MS = 5000;
 
 export class ApiError extends Error {

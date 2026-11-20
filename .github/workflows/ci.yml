@@ -33,6 +33,10 @@ jobs:
   e2e:
     name: e2e
     runs-on: ubuntu-latest
+    env:
+      # La app sirve su propio mock, así que los E2E prueban la API de este
+      # mismo PR y no la de producción.
+      API_URL: http://localhost:8080
     steps:
       - uses: actions/checkout@v4
 
@@ -45,8 +49,6 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run build
       # Con CI=true, Playwright arranca `npm run start` (build de producción).
-      # La app sirve su propio mock en localhost:8080, el valor por defecto de
-      # API_URL, así que los E2E prueban la API de este mismo PR.
       - run: npm run test:e2e
 
       - if: failure()
