@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { GET } from "./route";
+import { GET } from "../route";
 
 describe("GET /api/range", () => {
   it("responde con status 200", () => {

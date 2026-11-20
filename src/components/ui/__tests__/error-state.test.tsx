@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { ErrorState } from "./error-state";
+import { ErrorState } from "../error-state";
 
 describe("ErrorState", () => {
   it("avisa del error con el mensaje recibido", () => {

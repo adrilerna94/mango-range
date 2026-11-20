@@ -1,6 +1,6 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { Skeleton } from "./skeleton";
+import { Skeleton } from "../skeleton";
 
 describe("Skeleton", () => {
   it("es decorativo y no lo leen los lectores de pantalla", () => {
