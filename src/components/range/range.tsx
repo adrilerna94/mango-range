@@ -3,47 +3,22 @@
 import { RangeHandle } from "./range-handle";
 import { RangeLabel } from "./range-label";
 import { useRange } from "./hooks/use-range";
+import type {
+  RangeConfig,
+  RangeProps,
+  RangeValue,
+  SelectedRange,
+} from "./types/range.types";
 import {
   formatCurrency,
   getClosestIndex,
   valueToPercent,
-  type SelectedRange,
 } from "./utils/range.utils";
 
-/** Precios seleccionados: `[mínimo, máximo]`. */
-export type RangeValue = [min: number, max: number];
+// Tipos de la API pública, para importarlos junto al componente.
+export type { RangeProps, RangeValue } from "./types/range.types";
 
-// API controlada o no controlada, como Radix Slider. Los valores son siempre
-// precios, también en modo fijo.
-type RangeValueProps = {
-  /** Valor controlado: el padre lo actualiza en `onValueChange`. */
-  value?: RangeValue;
-  /** Valor inicial si el componente no está controlado. */
-  defaultValue?: RangeValue;
-  /** Se llama en cada cambio, también durante el arrastre (para pintar). */
-  onValueChange?: (value: RangeValue) => void;
-  /**
-   * Se llama una vez al terminar la interacción: al soltar el tirador, con
-   * cada tecla o al confirmar una etiqueta (p. ej. para filtrar o sincronizar
-   * la URL).
-   */
-  onValueCommit?: (value: RangeValue) => void;
-};
-
-type NormalRangeProps = RangeValueProps & {
-  mode: "normal";
-  min: number;
-  max: number;
-};
-
-type FixedRangeProps = RangeValueProps & {
-  mode: "fixed";
-  values: number[];
-};
-
-export type RangeProps = NormalRangeProps | FixedRangeProps;
-
-function getRangeConfig(props: RangeProps) {
+function getRangeConfig(props: RangeProps): RangeConfig {
   if (props.mode === "fixed") {
     const { values } = props;
 

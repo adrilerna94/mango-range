@@ -1,9 +1,4 @@
-export type Handle = "min" | "max";
-
-export type SelectedRange = {
-  min: number;
-  max: number;
-};
+import type { Handle, SelectedRange } from "../types/range.types";
 
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);

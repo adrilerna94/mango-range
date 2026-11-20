@@ -1,11 +1,6 @@
 import { useEditableLabel } from "./hooks/use-editable-label";
+import type { EditableLabelProps } from "./types/range.types";
 import { formatCurrency } from "./utils/range.utils";
-
-type EditableLabelProps = {
-  label: string;
-  value: number;
-  onValueChange: (value: number) => void;
-};
 
 export function EditableLabel({
   label,

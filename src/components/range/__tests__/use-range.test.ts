@@ -2,6 +2,7 @@ import type { KeyboardEvent, PointerEvent } from "react";
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useRange } from "../hooks/use-range";
+import type { Handle } from "../types/range.types";
 
 // Las reglas de límites y de no cruzarse se prueban en `moveHandle`
 // (range.utils.test.ts). Aquí solo se prueba lo propio del hook: estado,
@@ -14,7 +15,6 @@ function createTrack(left: number, width: number) {
 }
 
 type RangeResult = ReturnType<typeof renderRange>;
-type Handle = "min" | "max";
 
 function pointerEvent({ pointerId = 1, button = 0, clientX = 0 } = {}) {
   return {

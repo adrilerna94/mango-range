@@ -1,13 +1,11 @@
-import type { ComponentProps } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { RangeHandle } from "../range-handle";
+import type { RangeHandleProps } from "../types/range.types";
 
-type Props = ComponentProps<typeof RangeHandle>;
-
-function renderHandle(props: Partial<Props> = {}) {
-  const defaultProps: Props = {
+function renderHandle(props: Partial<RangeHandleProps> = {}) {
+  const defaultProps: RangeHandleProps = {
     label: "Precio mínimo",
     value: 25,
     min: 0,

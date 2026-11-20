@@ -1,11 +1,6 @@
 import { EditableLabel } from "./editable-label";
+import type { RangeLabelProps } from "./types/range.types";
 import { formatCurrency } from "./utils/range.utils";
-
-type RangeLabelProps = {
-  label: string;
-  value: number;
-  onValueChange?: (value: number) => void;
-};
 
 export function RangeLabel({ label, value, onValueChange }: RangeLabelProps) {
   if (!onValueChange) {
