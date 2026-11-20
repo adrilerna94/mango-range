@@ -15,10 +15,6 @@ jobs:
   checks:
     name: checks
     runs-on: ubuntu-latest
-    env:
-      # El build prerenderiza los datos del rango, así que necesita una API
-      # accesible: se usa el mock HTTP del despliegue de producción.
-      NEXT_PUBLIC_API_URL: https://mango-range-9cri.vercel.app
     steps:
       - uses: actions/checkout@v4
 
@@ -37,10 +33,6 @@ jobs:
   e2e:
     name: e2e
     runs-on: ubuntu-latest
-    env:
-      # El build prerenderiza los datos del rango, así que necesita una API
-      # accesible: se usa el mock HTTP del despliegue de producción.
-      NEXT_PUBLIC_API_URL: https://mango-range-9cri.vercel.app
     steps:
       - uses: actions/checkout@v4
 
@@ -53,6 +45,8 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run build
       # Con CI=true, Playwright arranca `npm run start` (build de producción).
+      # La app sirve su propio mock en localhost:8080, el valor por defecto de
+      # API_URL, así que los E2E prueban la API de este mismo PR.
       - run: npm run test:e2e
 
       - if: failure()

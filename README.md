@@ -25,14 +25,14 @@ cp .env.example .env.local
 npm run dev                  # http://localhost:8080
 ```
 
-La variable `NEXT_PUBLIC_API_URL` indica la URL base del servicio HTTP. En local es `http://localhost:8080`, la propia app.
+La variable `API_URL` indica la URL base del servicio HTTP. En local es `http://localhost:8080`, la propia app. Solo la lee el servidor, por eso no lleva el prefijo `NEXT_PUBLIC_` y no acaba en el JavaScript del navegador.
 
 ## Scripts
 
 | Script                  | Qué hace                                                         |
 | ----------------------- | ---------------------------------------------------------------- |
 | `npm run dev`           | Servidor de desarrollo en el puerto 8080.                        |
-| `npm run build`         | Build de producción (necesita la API accesible, ver abajo).      |
+| `npm run build`         | Build de producción.                                             |
 | `npm run start`         | Sirve el build en el puerto 8080.                                |
 | `npm run lint`          | ESLint.                                                          |
 | `npm run format:check`  | Comprueba el formato con Prettier (`npm run format` lo corrige). |
@@ -40,8 +40,6 @@ La variable `NEXT_PUBLIC_API_URL` indica la URL base del servicio HTTP. En local
 | `npm test`              | Vitest en modo watch.                                            |
 | `npm run test:coverage` | Tests unitarios y de integración con cobertura.                  |
 | `npm run test:e2e`      | Tests E2E con Playwright.                                        |
-
-**El build necesita la API.** Las páginas se prerenderizan con los datos ya incluidos, así que `next build` llama a `NEXT_PUBLIC_API_URL`. En local, deja `npm run dev` levantado en otra terminal o apunta la variable a la demo. Si la API no responde, el build falla en lugar de publicar una página rota.
 
 **E2E:** la primera vez instala el navegador con `npx playwright install chromium`. En local, Playwright arranca `npm run dev` (o reutiliza el que ya tengas en marcha); en CI usa el build de producción.
 
@@ -87,12 +85,21 @@ e2e/                                 # Playwright (escritorio y móvil)
 - envuelve cualquier fallo en un `ApiError` con el endpoint, el status y la causa original: red, timeout de 5 s, status HTTP o JSON inválido;
 - valida la forma de los datos en tiempo de ejecución: números finitos, `min < max` y al menos dos valores fijos en orden ascendente.
 
-**Caché y rendimiento.** Las funciones del servicio usan `"use cache"` con `cacheLife("hours")`. Por eso `/exercise1` y `/exercise2` se prerenderizan con el rango ya dentro de la página estática, se sirven desde la CDN y se regeneran cada hora (en la tabla del build aparecen con _Revalidate 1h_). No hay skeleton al cargar ni ninguna función ejecutándose por cada visita.
+**Servicio solo de servidor.** `range.api.ts` importa `server-only`: si un Client Component lo importara, el build fallaría.
 
-**Carga y errores.** Cada rango va dentro de un `ErrorBoundary` y un `Suspense`:
+**Renderizado: shell estático y datos en cada petición.** Con `cacheComponents`, Next hace _Partial Prerendering_ (en la tabla del build, `/exercise1` y `/exercise2` aparecen con ◐):
 
-- el fallback es `RangeSkeleton`, que reproduce la rejilla y las alturas del componente para no provocar saltos de layout (CLS);
+- el título, el enlace de vuelta y el `RangeSkeleton` se prerenderizan en el build y se sirven desde la CDN;
+- las funciones del servicio llaman a `await connection()` antes del `fetch`, así que los datos no se piden nunca al compilar, sino en cada petición, y el rango llega por streaming dentro de su `Suspense`.
+
+Por eso el build no necesita la API levantada.
+
+**Carga y errores.** Cada rango va dentro de un `ErrorBoundary` y un `Suspense`, y los dos actúan en producción porque los datos se piden en cada visita:
+
+- mientras llegan los datos se ve `RangeSkeleton`, que reproduce la rejilla y las alturas del componente para no provocar saltos de layout (CLS);
 - si falla la carga, `ErrorState` muestra un mensaje propio (no el detalle técnico del error) y un botón "Reintentar" que vuelve a pedir los datos. El título y el enlace de vuelta siguen visibles.
+
+Para verlo en local: `npm run build` y después `API_URL=http://localhost:9999 npm start`. La app sigue en el 8080, pero el servicio apunta a un puerto donde no escucha nada.
 
 **Modo fijo con índices.** En modo `fixed`, el hook trabaja con las posiciones de la lista (de `0` a `n - 1`) y el componente las traduce a precios. Así los dos modos comparten exactamente la misma lógica de arrastre, teclado y límites.
 
@@ -155,7 +162,7 @@ La estrategia evita probar lo mismo en varios niveles:
   - `checks`: lint, Prettier, typecheck, tests con umbrales de cobertura y build;
   - `e2e`: build de producción y Playwright en Chromium. Si falla, sube el informe como artefacto.
 - **Protección de `main`** (ruleset): no se puede hacer push directo, solo mergear un PR con `checks` y `e2e` en verde y la rama al día con `main`. Tampoco se permiten force push ni borrar la rama.
-- **Vercel** despliega `main` en producción y cada PR en un entorno de preview. `NEXT_PUBLIC_API_URL` apunta a la URL de producción en todos los entornos.
+- **Vercel** despliega `main` en producción y cada PR en un entorno de preview. En producción, `API_URL` se define en el panel de Vercel. En los previews no hace falta: se usa `VERCEL_URL`, la URL del propio despliegue, así que cada preview prueba su propio mock.
 
 ## Flujo de trabajo con git
 
@@ -165,8 +172,8 @@ La estrategia evita probar lo mismo en varios niveles:
 
 ## Decisiones y trade-offs
 
-- **El mock vive dentro de la propia app**, como Route Handlers. No hay dependencias externas y el contrato HTTP es real. La contrapartida es que el build necesita una API accesible, porque prerenderiza los datos. En un proyecto real, la API sería un servicio aparte y esto no supondría ningún problema.
-- **Prerender con revalidación horaria en vez de renderizar en cada petición.** En plataformas serverless, la caché en memoria de `"use cache"` no se mantiene entre instancias. Prerenderizar da HTML completo desde la CDN, mejor LCP y sin skeleton.
+- **El mock vive dentro de la propia app**, como Route Handlers. No hay dependencias externas y el contrato HTTP es real. La contrapartida es que el servidor se hace una petición HTTP a sí mismo, un salto de red que Next desaconseja. En un proyecto real la API sería un servicio aparte y este `fetch` sería el correcto.
+- **Datos en cada petición en vez de `"use cache"`.** Antes los datos se prerenderizaban y se revalidaban cada hora: la página llegaba completa desde la CDN, pero el `Suspense` y el `ErrorBoundary` no llegaban a actuar en producción y el build dependía de una API levantada. Ahora solo el shell es estático: se ve un skeleton breve a cambio de datos siempre frescos, errores gestionados de verdad y un build independiente de la API. Si el rango cambiara poco y el tráfico fuera alto, volvería a cachear con `"use cache"` y `cacheLife`.
 - **YAGNI en la API pública.** No hay `value`/`onChange`, `step` ni props de internacionalización porque hoy no los usa nadie. Las props solo se amplían cuando aparece un caso real.
 - **El arrastre escucha los eventos de puntero en `window`**, de modo que sigue aunque el puntero salga del tirador, y se cancela con `pointercancel`. `setPointerCapture` sería una alternativa más localizada.
 

@@ -2,8 +2,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiError, getRangeLimits, getRangeValues } from "./range.api";
 
-// `cacheLife` solo funciona dentro del runtime de Next.
-vi.mock("next/cache", () => ({ cacheLife: vi.fn() }));
+// `server-only` lanza un error fuera de un entorno de React Server Components y
+// `connection` solo funciona dentro de una petición de Next.
+vi.mock("server-only", () => ({}));
+vi.mock("next/server", () => ({ connection: vi.fn() }));
 
 function mockFetch(body: unknown, status = 200) {
   const fetchMock = vi
@@ -23,6 +25,7 @@ function mockNetworkError(error: Error) {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 describe("getRangeLimits", () => {
@@ -147,5 +150,39 @@ describe("validación de los datos", () => {
     mockFetch(body);
 
     await expect(getRangeValues()).rejects.toThrow("formato inesperado");
+  });
+});
+
+describe("URL base de la API", () => {
+  // API_URL se lee al cargar el módulo: cada caso lo vuelve a importar.
+  async function requestedUrl() {
+    vi.resetModules();
+    const { getRangeLimits } = await import("./range.api");
+    const fetchMock = mockFetch({ min: 1, max: 100 });
+
+    await getRangeLimits();
+
+    return fetchMock.mock.calls[0][0];
+  }
+
+  it("usa API_URL si está definida", async () => {
+    vi.stubEnv("API_URL", "https://api.example.com");
+    vi.stubEnv("VERCEL_URL", "preview.vercel.app");
+
+    expect(await requestedUrl()).toBe("https://api.example.com/api/range");
+  });
+
+  it("usa la URL del despliegue de Vercel si no hay API_URL", async () => {
+    vi.stubEnv("API_URL", undefined);
+    vi.stubEnv("VERCEL_URL", "preview.vercel.app");
+
+    expect(await requestedUrl()).toBe("https://preview.vercel.app/api/range");
+  });
+
+  it("usa la propia app en local", async () => {
+    vi.stubEnv("API_URL", undefined);
+    vi.stubEnv("VERCEL_URL", undefined);
+
+    expect(await requestedUrl()).toBe("http://localhost:8080/api/range");
   });
 });
