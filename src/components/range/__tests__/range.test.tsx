@@ -235,3 +235,152 @@ describe("Range en modo fijo: arrastre y teclado", () => {
     expect(minHandle).toHaveAttribute("aria-valuetext", "50.99€");
   });
 });
+
+describe("Range: valor controlado y eventos", () => {
+  function getHandles() {
+    return {
+      minHandle: screen.getByRole("slider", { name: "Precio mínimo" }),
+      maxHandle: screen.getByRole("slider", { name: "Precio máximo" }),
+    };
+  }
+
+  it("empieza en defaultValue", () => {
+    render(<Range mode="normal" min={0} max={100} defaultValue={[20, 80]} />);
+    const { minHandle, maxHandle } = getHandles();
+
+    expect(minHandle).toHaveAttribute("aria-valuenow", "20");
+    expect(maxHandle).toHaveAttribute("aria-valuenow", "80");
+  });
+
+  it("avisa del cambio y del valor final al usar el teclado", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    const onValueCommit = vi.fn();
+    render(
+      <Range
+        mode="normal"
+        min={0}
+        max={100}
+        onValueChange={onValueChange}
+        onValueCommit={onValueCommit}
+      />,
+    );
+
+    getHandles().minHandle.focus();
+    await user.keyboard("{ArrowRight}");
+
+    expect(onValueChange).toHaveBeenCalledWith([1, 100]);
+    expect(onValueCommit).toHaveBeenCalledWith([1, 100]);
+  });
+
+  it("avisa al confirmar una etiqueta", async () => {
+    const user = userEvent.setup();
+    const onValueCommit = vi.fn();
+    render(
+      <Range mode="normal" min={0} max={100} onValueCommit={onValueCommit} />,
+    );
+
+    await editLabel(user, /editar precio máximo/i, "60");
+
+    expect(onValueCommit).toHaveBeenCalledWith([0, 60]);
+  });
+
+  it("al arrastrar avisa de cada cambio y del valor final una sola vez", () => {
+    mockTrackSize(0, 200);
+    const onValueChange = vi.fn();
+    const onValueCommit = vi.fn();
+    render(
+      <Range
+        mode="normal"
+        min={0}
+        max={100}
+        onValueChange={onValueChange}
+        onValueCommit={onValueCommit}
+      />,
+    );
+    const { minHandle } = getHandles();
+
+    fireEvent.pointerDown(minHandle);
+    movePointer(minHandle, 50);
+    movePointer(minHandle, 100);
+    expect(onValueCommit).not.toHaveBeenCalled();
+
+    releasePointer(minHandle);
+    fireEvent.lostPointerCapture(minHandle);
+
+    expect(onValueChange).toHaveBeenNthCalledWith(1, [25, 100]);
+    expect(onValueChange).toHaveBeenNthCalledWith(2, [50, 100]);
+    expect(onValueCommit).toHaveBeenCalledTimes(1);
+    expect(onValueCommit).toHaveBeenCalledWith([50, 100]);
+  });
+
+  it("no avisa al soltar si el valor no ha cambiado", () => {
+    mockTrackSize(0, 200);
+    const onValueCommit = vi.fn();
+    render(
+      <Range mode="normal" min={0} max={100} onValueCommit={onValueCommit} />,
+    );
+    const { minHandle } = getHandles();
+
+    fireEvent.pointerDown(minHandle);
+    releasePointer(minHandle);
+
+    expect(onValueCommit).not.toHaveBeenCalled();
+  });
+
+  it("en modo controlado muestra el valor del padre", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    const { rerender } = render(
+      <Range
+        mode="normal"
+        min={0}
+        max={100}
+        value={[30, 70]}
+        onValueChange={onValueChange}
+      />,
+    );
+    const { minHandle } = getHandles();
+
+    minHandle.focus();
+    await user.keyboard("{ArrowRight}");
+
+    // El padre no ha actualizado el valor: el tirador no se mueve.
+    expect(onValueChange).toHaveBeenCalledWith([31, 70]);
+    expect(minHandle).toHaveAttribute("aria-valuenow", "30");
+
+    rerender(<Range mode="normal" min={0} max={100} value={[31, 70]} />);
+
+    expect(minHandle).toHaveAttribute("aria-valuenow", "31");
+  });
+
+  it("en modo fijo trabaja con precios", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    render(
+      <Range
+        mode="fixed"
+        values={FIXED_VALUES}
+        defaultValue={[5.99, 50.99]}
+        onValueChange={onValueChange}
+      />,
+    );
+    const { minHandle, maxHandle } = getHandles();
+
+    expect(minHandle).toHaveAttribute("aria-valuetext", "5.99€");
+    expect(maxHandle).toHaveAttribute("aria-valuetext", "50.99€");
+
+    minHandle.focus();
+    await user.keyboard("{ArrowRight}");
+
+    expect(onValueChange).toHaveBeenCalledWith([10.99, 50.99]);
+  });
+
+  it("en modo fijo ajusta un precio que no está en la lista al más cercano", () => {
+    render(
+      <Range mode="fixed" values={FIXED_VALUES} defaultValue={[6, 70.99]} />,
+    );
+
+    expect(getHandles().minHandle).toHaveAttribute("aria-valuetext", "5.99€");
+  });
+});

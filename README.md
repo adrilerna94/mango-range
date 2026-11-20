@@ -115,6 +115,50 @@ import { Range } from "@/components/range/range";
 
 `RangeProps` es una unión discriminada por `mode`: TypeScript no deja combinar `min`/`max` con `values`.
 
+Además, los dos modos aceptan una API controlada o no controlada con los mismos nombres que [Radix Slider](https://www.radix-ui.com/primitives/docs/components/slider). El valor es una tupla `RangeValue = [min, max]` y siempre son **precios**, también en modo fijo (internamente se trabaja con índices):
+
+| Prop            | Tipo                          | Para qué                                                                                                                             |
+| --------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `defaultValue`  | `RangeValue`                  | Valor inicial si el componente no está controlado. Por defecto, los límites.                                                         |
+| `value`         | `RangeValue`                  | Valor controlado. El padre lo actualiza en `onValueChange`.                                                                          |
+| `onValueChange` | `(value: RangeValue) => void` | Cada cambio, también durante el arrastre. Sirve para pintar.                                                                         |
+| `onValueCommit` | `(value: RangeValue) => void` | Una vez al terminar: al soltar el tirador (solo si el valor cambió), con cada tecla o al confirmar una etiqueta. Sirve para filtrar. |
+
+Separar los dos eventos evita lanzar una búsqueda por cada píxel del arrastre. Si un valor no es válido, se ajusta igual que la entrada del usuario: dentro de los límites, sin cruzarse y, en modo fijo, al precio más cercano de la lista.
+
+Ejemplo de sincronización con la URL. Las funciones no pueden pasar de un Server Component a uno de cliente, así que hace falta un pequeño wrapper `"use client"`:
+
+```tsx
+"use client";
+
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Range } from "@/components/range/range";
+
+export function PriceFilter({ min, max }: { min: number; max: number }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  return (
+    <Range
+      mode="normal"
+      min={min}
+      max={max}
+      defaultValue={[
+        Number(searchParams.get("minPrice") ?? min),
+        Number(searchParams.get("maxPrice") ?? max),
+      ]}
+      onValueCommit={([minPrice, maxPrice]) => {
+        const params = new URLSearchParams(searchParams);
+        params.set("minPrice", String(minPrice));
+        params.set("maxPrice", String(maxPrice));
+        router.replace(`${pathname}?${params}`, { scroll: false });
+      }}
+    />
+  );
+}
+```
+
 Comportamiento común a los dos modos:
 
 - Los tiradores nunca salen de los límites ni se cruzan.
@@ -174,13 +218,13 @@ La estrategia evita probar lo mismo en varios niveles:
 
 - **El mock vive dentro de la propia app**, como Route Handlers. No hay dependencias externas y el contrato HTTP es real. La contrapartida es que el servidor se hace una petición HTTP a sí mismo, un salto de red que Next desaconseja. En un proyecto real la API sería un servicio aparte y este `fetch` sería el correcto.
 - **Datos en cada petición en vez de `"use cache"`.** Antes los datos se prerenderizaban y se revalidaban cada hora: la página llegaba completa desde la CDN, pero el `Suspense` y el `ErrorBoundary` no llegaban a actuar en producción y el build dependía de una API levantada. Ahora solo el shell es estático: se ve un skeleton breve a cambio de datos siempre frescos, errores gestionados de verdad y un build independiente de la API. Si el rango cambiara poco y el tráfico fuera alto, volvería a cachear con `"use cache"` y `cacheLife`.
-- **YAGNI en la API pública.** No hay `value`/`onChange`, `step` ni props de internacionalización porque hoy no los usa nadie. Las props solo se amplían cuando aparece un caso real.
+- **API pública mínima.** Solo se ha añadido lo necesario para usar el componente como filtro (`value`, `defaultValue`, `onValueChange` y `onValueCommit`, con los nombres de Radix). No hay `step` ni props de internacionalización porque hoy no los usa nadie: las props solo se amplían cuando aparece un caso real.
 - **Arrastre con captura de puntero.** Al pulsar un tirador se llama a `setPointerCapture`, así que el tirador sigue recibiendo los eventos aunque el puntero salga de él o de la ventana, sin listeners en `window`. Solo arranca con el botón principal (no con clic derecho ni central) y se guarda el `pointerId`: un segundo dedo no puede quitarle el tirador al primero. Termina con `pointerup`, `pointercancel` o `lostpointercapture`.
 - **Coste de cada `pointermove`.** La posición de la barra se lee una vez al empezar a arrastrar, no en cada movimiento, y `moveHandle` devuelve el mismo objeto si el valor no cambia, así que React solo vuelve a renderizar cuando el tirador cambia de valor. No hace falta `requestAnimationFrame`: los navegadores ya agrupan los `pointermove` a uno por frame.
 
 ## Siguientes pasos
 
-- **Uso como filtro:** API controlada (`value`, `defaultValue`, `onValueChange` y `onValueCommit` al soltar) cuando el componente tenga que filtrar productos, por ejemplo sincronizado con los parámetros de la URL.
+- **Filtro de productos:** usar `onValueCommit` para sincronizar el rango con los parámetros de la URL (ver el ejemplo de arriba) y que el listado se filtre en el servidor.
 - **Internacionalización:** formato de precios con `Intl.NumberFormat` según el idioma y la moneda (por ejemplo, `1,99 €`), y textos y etiquetas recibidos por props.
 - **Prop `step`** para pasos distintos de 1 o para céntimos.
 - **Etiquetas de solo lectura con contexto** para los lectores de pantalla (mínimo y máximo).

@@ -12,48 +12,84 @@ import {
   moveHandle,
   percentToValue,
   type Handle,
+  type SelectedRange,
 } from "../utils/range.utils";
 
 type UseRangeOptions = {
   min: number;
   max: number;
+  /** Valor controlado. Si se pasa, el padre es quien lo actualiza. */
+  value?: SelectedRange;
+  /** Valor inicial en modo no controlado. */
+  defaultValue?: SelectedRange;
+  /** En cada cambio, también durante el arrastre. */
+  onValueChange?: (value: SelectedRange) => void;
+  /** Al terminar una interacción: soltar el tirador, una tecla o editar una etiqueta. */
+  onValueCommit?: (value: SelectedRange) => void;
 };
 
-// Arrastre en curso: el puntero que lo controla y la posición de la barra al
-// empezar (se lee una sola vez, no en cada movimiento).
+// Arrastre en curso: el puntero que lo controla, la posición de la barra al
+// empezar (se lee una sola vez, no en cada movimiento) y los valores al
+// empezar y en el último movimiento, para avisar al soltar solo si cambió.
 type Drag = {
   pointerId: number;
   trackLeft: number;
   trackWidth: number;
+  start: SelectedRange;
+  latest: SelectedRange;
 };
 
-export function useRange({ min, max }: UseRangeOptions) {
-  const [selected, setSelected] = useState({ min, max });
+function isSameRange(a: SelectedRange, b: SelectedRange) {
+  return a.min === b.min && a.max === b.max;
+}
+
+export function useRange({
+  min,
+  max,
+  value,
+  defaultValue,
+  onValueChange,
+  onValueCommit,
+}: UseRangeOptions) {
+  const [internal, setInternal] = useState(defaultValue ?? { min, max });
   const [activeHandle, setActiveHandle] = useState<Handle | null>(null);
   const [lastHandle, setLastHandle] = useState<Handle>("max");
   const trackRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<Drag | null>(null);
 
-  // Si los límites cambian (p. ej. tras revalidar los datos), los valores
-  // seleccionados se recolocan dentro del nuevo rango.
+  // Si los límites cambian (p. ej. tras revalidar los datos) o el valor que
+  // llega no es válido, se recoloca dentro del rango durante el render.
   const bounds = { min, max };
-  const current = clampRange(selected, bounds);
+  const isControlled = value !== undefined;
+  const current = clampRange(isControlled ? value : internal, bounds);
 
-  // `moveHandle` devuelve el mismo objeto si el valor no cambia, así que React
-  // no vuelve a renderizar en los movimientos que no cambian el valor.
-  function setValue(handle: Handle, value: number) {
+  // `moveHandle` devuelve el mismo objeto si el valor no cambia: en ese caso no
+  // se actualiza el estado ni se avisa al padre.
+  function update(handle: Handle, newValue: number, commit: boolean) {
     setLastHandle(handle);
-    setSelected((previous) =>
-      moveHandle(clampRange(previous, bounds), handle, value, bounds),
-    );
+
+    const next = moveHandle(current, handle, newValue, bounds);
+    if (next === current) return current;
+
+    if (!isControlled) setInternal(next);
+    onValueChange?.(next);
+    if (commit) onValueCommit?.(next);
+
+    return next;
+  }
+
+  function setValue(handle: Handle, newValue: number) {
+    update(handle, newValue, true);
   }
 
   function getPointerHandlers(handle: Handle) {
     function stopDragging(event: PointerEvent<HTMLElement>) {
-      if (dragRef.current?.pointerId !== event.pointerId) return;
+      const drag = dragRef.current;
+      if (!drag || drag.pointerId !== event.pointerId) return;
 
       dragRef.current = null;
       setActiveHandle(null);
+      if (!isSameRange(drag.start, drag.latest)) onValueCommit?.(drag.latest);
     }
 
     return {
@@ -74,6 +110,8 @@ export function useRange({ min, max }: UseRangeOptions) {
           pointerId: event.pointerId,
           trackLeft: left,
           trackWidth: width,
+          start: current,
+          latest: current,
         };
         setLastHandle(handle);
         setActiveHandle(handle);
@@ -87,7 +125,7 @@ export function useRange({ min, max }: UseRangeOptions) {
           drag.trackLeft,
           drag.trackWidth,
         );
-        setValue(handle, percentToValue(percent, min, max));
+        drag.latest = update(handle, percentToValue(percent, min, max), false);
       },
       onPointerUp: stopDragging,
       onPointerCancel: stopDragging,
@@ -97,11 +135,11 @@ export function useRange({ min, max }: UseRangeOptions) {
 
   function handleKeyDown(handle: Handle) {
     return (event: KeyboardEvent<HTMLElement>) => {
-      const value = getKeyboardValue(event.key, current[handle], bounds);
-      if (value === null) return;
+      const newValue = getKeyboardValue(event.key, current[handle], bounds);
+      if (newValue === null) return;
 
       event.preventDefault();
-      setValue(handle, value);
+      setValue(handle, newValue);
     };
   }
 

@@ -39,6 +39,17 @@ export function getPercentFromPointer(
   return clamp(percent, 0, 100);
 }
 
+/** Índice del valor de la lista más cercano a `target`. */
+export function getClosestIndex(values: number[], target: number): number {
+  return values.reduce(
+    (closest, value, index) =>
+      Math.abs(value - target) < Math.abs(values[closest] - target)
+        ? index
+        : closest,
+    0,
+  );
+}
+
 export function formatCurrency(value: number): string {
   return `${value}€`;
 }

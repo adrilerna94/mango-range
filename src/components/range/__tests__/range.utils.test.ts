@@ -3,6 +3,7 @@ import {
   clamp,
   clampRange,
   formatCurrency,
+  getClosestIndex,
   getKeyboardValue,
   getPercentFromPointer,
   moveHandle,
@@ -76,6 +77,20 @@ describe("getPercentFromPointer", () => {
 
   it("devuelve 0 si la barra no tiene ancho", () => {
     expect(getPercentFromPointer(150, 100, 0)).toBe(0);
+  });
+});
+
+describe("getClosestIndex", () => {
+  const values = [1.99, 5.99, 10.99];
+
+  it("devuelve el índice de un valor de la lista", () => {
+    expect(getClosestIndex(values, 5.99)).toBe(1);
+  });
+
+  it("ajusta un valor que no está en la lista al más cercano", () => {
+    expect(getClosestIndex(values, 9)).toBe(2);
+    expect(getClosestIndex(values, 0)).toBe(0);
+    expect(getClosestIndex(values, 100)).toBe(2);
   });
 });
 
