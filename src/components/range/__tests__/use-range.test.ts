@@ -91,6 +91,20 @@ describe("useRange: valores", () => {
     expect(result.current.minValue).toBe(30);
   });
 
+  it("no avisa al padre si el valor no cambia", () => {
+    const onValueChange = vi.fn();
+    const onValueCommit = vi.fn();
+    const { result } = renderHook(() =>
+      useRange({ min: 0, max: 100, onValueChange, onValueCommit }),
+    );
+
+    act(() => result.current.setValue("min", -10));
+
+    expect(result.current.minValue).toBe(0);
+    expect(onValueChange).not.toHaveBeenCalled();
+    expect(onValueCommit).not.toHaveBeenCalled();
+  });
+
   it("recoloca los valores si los límites se estrechan", () => {
     const { result, rerender } = renderHook((bounds) => useRange(bounds), {
       initialProps: { min: 0, max: 100 },
