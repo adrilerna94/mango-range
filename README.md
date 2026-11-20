@@ -21,11 +21,17 @@ Requisitos: Node.js 22 o superior y npm. La versión está fijada en `.nvmrc` (y
 ```bash
 nvm use                      # opcional, lee .nvmrc
 npm ci
-cp .env.example .env.local
+cp .env.example .env.local   # define API_URL
 npm run dev                  # http://localhost:8080
 ```
 
-La variable `API_URL` indica la URL base del servicio HTTP. En local es `http://localhost:8080`, la propia app. Solo la lee el servidor, por eso no lleva el prefijo `NEXT_PUBLIC_` y no acaba en el JavaScript del navegador.
+**`API_URL`** es la URL base del servicio HTTP y es obligatoria: el código no tiene valor por defecto.
+
+- En local, `.env.local` la apunta a la propia app: `http://localhost:8080`.
+- En Vercel se define en las variables de entorno del proyecto, para Production y para Preview.
+- En CI, el job `e2e` la define en el workflow.
+
+Solo la lee el servidor (`lib/api/range.api.ts`), por eso no lleva el prefijo `NEXT_PUBLIC_` y no acaba en el JavaScript del navegador. Si falta, el `fetch` falla y la página muestra el mensaje de error del rango.
 
 ## Scripts
 
@@ -41,7 +47,7 @@ La variable `API_URL` indica la URL base del servicio HTTP. En local es `http://
 | `npm run test:coverage` | Tests unitarios y de integración con cobertura.                  |
 | `npm run test:e2e`      | Tests E2E con Playwright.                                        |
 
-**E2E:** la primera vez instala el navegador con `npx playwright install chromium`. En local, Playwright arranca `npm run dev` (o reutiliza el que ya tengas en marcha); en CI usa el build de producción.
+**E2E:** la primera vez instala el navegador con `npx playwright install chromium`. En local, Playwright arranca `npm run dev` (o reutiliza el que ya tengas en marcha), que lee `API_URL` de `.env.local`; en CI usa el build de producción.
 
 ## Estructura
 
@@ -54,9 +60,11 @@ src/
 │   │   │   └── components/
 │   │   │       └── normal-range.tsx # Server Component: pide los datos y pinta <Range>
 │   │   └── exercise2/               # Igual, en modo "fixed"
-│   ├── api/
-│   │   ├── range/route.ts           # Mock HTTP
-│   │   └── range-values/route.ts    # Mock HTTP
+│   ├── api/                         # Mock HTTP (Route Handlers)
+│   │   ├── range/
+│   │   │   ├── route.ts
+│   │   │   └── __tests__/
+│   │   └── range-values/            # Igual que range/
 │   ├── layout.tsx
 │   └── page.tsx                     # Portada con los enlaces a los ejercicios
 ├── components/
@@ -64,21 +72,28 @@ src/
 │   │   ├── range.tsx                # API pública (Client Component)
 │   │   ├── range-handle.tsx         # Tirador (role="slider")
 │   │   ├── range-label.tsx          # Etiqueta de solo lectura o editable
-│   │   ├── editable-label.tsx
+│   │   ├── editable-label.tsx       # Botón que pasa a campo numérico al hacer clic
 │   │   ├── range-skeleton.tsx       # Fallback con la misma rejilla que <Range>
 │   │   ├── hooks/                   # useRange, useEditableLabel
-│   │   ├── utils/                   # Funciones puras: límites, porcentajes, teclado
+│   │   ├── types/range.types.ts     # Todos los tipos del componente
+│   │   ├── utils/range.utils.ts     # Funciones puras: configuración de cada modo,
+│   │   │                            # límites, porcentajes, teclado y formato
 │   │   └── __tests__/
 │   └── ui/                          # Piezas genéricas: Skeleton, ErrorBoundary, ErrorState
-└── lib/api/range.api.ts             # Capa de servicio: fetch, errores y validación
+│       └── __tests__/
+└── lib/api/
+    ├── range.api.ts                 # Capa de servicio: fetch, errores y validación
+    └── __tests__/
 e2e/                                 # Playwright (escritorio y móvil)
 ```
 
+Los tests unitarios y de integración van siempre en una carpeta `__tests__` junto al código que prueban. En `app/`, las carpetas que empiezan por `_` son privadas, así que no crean rutas.
+
 ## Arquitectura
 
-**Datos y presentación están separados.** `<Range>` solo recibe números: no sabe de dónde salen. Los componentes de `exercise*/components/` son Server Components que llaman a la capa de servicio y le pasan los datos a `<Range>`. Así el componente se puede reutilizar en cualquier página, y en un design system real no tendría ninguna dependencia de la API.
+**Datos y presentación están separados.** `<Range>` solo recibe números (y, si se quiere, callbacks para leer el valor): no sabe de dónde salen. Los componentes de `exercise*/components/` son Server Components que llaman a la capa de servicio y le pasan los datos a `<Range>`. Así el componente se puede reutilizar en cualquier página, y en un design system real no tendría ninguna dependencia de la API.
 
-**La frontera entre servidor y cliente es mínima.** Solo `range.tsx` lleva `"use client"`. Las páginas, el layout y los componentes que piden los datos se renderizan en el servidor.
+**La frontera entre servidor y cliente es mínima.** Solo dos archivos llevan `"use client"`: `range.tsx` (y con él todo lo que importa: tirador, etiquetas y hooks) y `ui/error-boundary.tsx`, porque un error boundary tiene que ser una clase de cliente. Las páginas, el layout, el skeleton y los componentes que piden los datos se renderizan en el servidor.
 
 **La capa de servicio no se fía de la respuesta.** `lib/api/range.api.ts`:
 
@@ -99,9 +114,7 @@ Por eso el build no necesita la API levantada.
 - mientras llegan los datos se ve `RangeSkeleton`, que reproduce la rejilla y las alturas del componente para no provocar saltos de layout (CLS);
 - si falla la carga, `ErrorState` muestra un mensaje propio (no el detalle técnico del error) y un botón "Reintentar" que vuelve a pedir los datos. El título y el enlace de vuelta siguen visibles.
 
-Para verlo en local: `npm run build` y después `API_URL=http://localhost:9999 npm start`. La app sigue en el 8080, pero el servicio apunta a un puerto donde no escucha nada.
-
-**Modo fijo con índices.** En modo `fixed`, el hook trabaja con las posiciones de la lista (de `0` a `n - 1`) y el componente las traduce a precios. Así los dos modos comparten exactamente la misma lógica de arrastre, teclado y límites. La barra muestra una marca por cada valor posible, para que se vea que el tirador salta entre posiciones fijas. Las marcas están separadas por índice, no en proporción al precio: cada opción ocupa el mismo espacio y se puede pulsar aunque los precios estén muy juntos.
+**Modo fijo con índices.** En modo `fixed`, el hook trabaja con las posiciones de la lista (de `0` a `n - 1`) y el componente las traduce a precios. `getRangeConfig` (en `utils/range.utils.ts`) da a cada modo sus límites, si las etiquetas son editables, el número de marcas y las conversiones entre posición y precio. Así los dos modos comparten exactamente la misma lógica de arrastre, teclado y límites. La barra muestra una marca por cada valor posible, para que se vea que el tirador salta entre posiciones fijas. Las marcas están separadas por índice, no en proporción al precio: cada opción ocupa el mismo espacio y se puede pulsar aunque los precios estén muy juntos.
 
 ## API del componente
 
@@ -113,7 +126,7 @@ import { Range } from "@/components/range/range";
 <Range mode="fixed" values={[1.99, 5.99, 10.99, 30.99, 50.99, 70.99]} />
 ```
 
-`RangeProps` es una unión discriminada por `mode`: TypeScript no deja combinar `min`/`max` con `values`.
+`RangeProps` es una unión discriminada por `mode`: TypeScript no deja combinar `min`/`max` con `values`. Todos los tipos están en `types/range.types.ts`; `range.tsx` reexporta los públicos (`RangeProps` y `RangeValue`) para importarlos junto al componente.
 
 Además, los dos modos aceptan una API controlada o no controlada con los mismos nombres que [Radix Slider](https://www.radix-ui.com/primitives/docs/components/slider). El valor es una tupla `RangeValue = [min, max]` y siempre son **precios**, también en modo fijo (internamente se trabaja con índices):
 
@@ -126,7 +139,7 @@ Además, los dos modos aceptan una API controlada o no controlada con los mismos
 
 Separar los dos eventos evita lanzar una búsqueda por cada píxel del arrastre. Si un valor no es válido, se ajusta igual que la entrada del usuario: dentro de los límites, sin cruzarse y, en modo fijo, al precio más cercano de la lista.
 
-Ejemplo de sincronización con la URL. Las funciones no pueden pasar de un Server Component a uno de cliente, así que hace falta un pequeño wrapper `"use client"`:
+Ejemplo de sincronización con la URL. Las funciones no pueden pasar de un Server Component a uno de cliente, así que hace falta un pequeño wrapper `"use client"`. Como lee `useSearchParams`, con `cacheComponents` la página tiene que renderizarlo dentro de un `<Suspense>`:
 
 ```tsx
 "use client";
@@ -182,7 +195,7 @@ En modo `normal`, las etiquetas tienen siempre aspecto de campo (borde visible, 
   | `Home` / `End`        | Al límite inferior / superior |
 
 - **Foco:** anillo visible con `focus-visible`. Al cerrar la edición de una etiqueta con Enter o Escape, el foco vuelve al botón.
-- **Zona táctil:** el punto visible mide 16 px, pero la zona que responde al dedo mide 44 px (WCAG 2.5.8). Cuando los dos tiradores coinciden, queda encima el último que se ha movido.
+- **Zona táctil:** el punto visible mide 16 px, pero la zona que responde al dedo mide 44 px (WCAG 2.5.8). Cuando los dos tiradores se solapan, queda encima el último que se ha movido.
 - **Movimiento reducido:** las animaciones del skeleton respetan `prefers-reduced-motion`.
 - **Lectores de pantalla:** el skeleton se anuncia con `role="status"` y los errores con `role="alert"`.
 - **Móvil:** las etiquetas pasan a una fila encima de la barra, que ocupa todo el ancho.
@@ -197,7 +210,7 @@ La estrategia evita probar lo mismo en varios niveles:
 | Integración | Vitest + Testing Library | La API pública de `<Range>` en los dos modos, las etiquetas, el skeleton y el error boundary, consultando por rol como un usuario.           |
 | E2E         | Playwright               | Lo que solo se puede comprobar en un navegador real: arrastre con ratón y con el dedo, hover, cursores, teclado, zona táctil y layout móvil. |
 
-- **Volumen:** 158 tests unitarios y de integración, y 21 E2E (15 de escritorio y 6 de móvil en un Pixel 7 emulado).
+- **Volumen:** 162 tests unitarios y de integración, y 21 E2E (15 de escritorio y 6 de móvil en un Pixel 7 emulado).
 - **Cobertura:** el informe de Vitest deja fuera `layout`, `page` y los componentes que piden los datos, porque solo componen piezas ya probadas y los cubren los E2E. En el resto se exige un mínimo del 90 % y ahora mismo está al 100 %.
 
 ## CI/CD
@@ -206,7 +219,7 @@ La estrategia evita probar lo mismo en varios niveles:
   - `checks`: lint, Prettier, typecheck, tests con umbrales de cobertura y build;
   - `e2e`: build de producción y Playwright en Chromium. Si falla, sube el informe como artefacto.
 - **Protección de `main`** (ruleset): no se puede hacer push directo, solo mergear un PR con `checks` y `e2e` en verde y la rama al día con `main`. Tampoco se permiten force push ni borrar la rama.
-- **Vercel** despliega `main` en producción y cada PR en un entorno de preview. `API_URL` se define en las variables de entorno del proyecto en Vercel. En CI, el job `e2e` la apunta a `localhost:8080`, así que los E2E prueban el mock del propio PR.
+- **Vercel** despliega `main` en producción y cada PR en un entorno de preview. `API_URL` se define en las variables de entorno del proyecto, para Production y para Preview. En CI, el job `e2e` la apunta a `localhost:8080`, así que los E2E prueban el mock del propio PR.
 
 ## Flujo de trabajo con git
 
