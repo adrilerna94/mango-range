@@ -165,7 +165,7 @@ Comportamiento común a los dos modos:
 - Al pasar el ratón o arrastrar, el tirador se agranda y cambia el cursor.
 - Se pueden arrastrar con ratón o con el dedo, y moverse con el teclado.
 
-En modo `normal`, al hacer clic en una etiqueta aparece un campo para escribir el valor:
+En modo `normal`, las etiquetas tienen siempre aspecto de campo (borde visible, no solo al pasar el ratón), así que también se ve que son editables en táctil. Al hacer clic aparece un campo para escribir el valor, con el `€` al lado y sin las flechas nativas de `type="number"`. Los dos estados miden lo mismo, así que no hay saltos de layout:
 
 - **Enter o salir del campo** confirma. El valor se redondea y se ajusta a los límites.
 - **Escape** cancela.

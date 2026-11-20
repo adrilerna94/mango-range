@@ -34,6 +34,14 @@ describe("EditableLabel", () => {
     expect(input).toHaveFocus();
   });
 
+  it("muestra el símbolo del euro junto al campo", async () => {
+    const { user } = renderLabel();
+
+    await user.click(screen.getByRole("button"));
+
+    expect(screen.getByText("€")).toHaveAttribute("aria-hidden", "true");
+  });
+
   it("confirma el nuevo valor al pulsar Enter", async () => {
     const { user, onValueChange } = renderLabel();
 
