@@ -5,12 +5,8 @@ import {
   type FocusEvent,
   type KeyboardEvent,
 } from "react";
+import type { UseEditableLabelOptions } from "../types/range.types";
 import { parseLabelValue } from "../utils/range.utils";
-
-type UseEditableLabelOptions = {
-  value: number;
-  onValueChange: (value: number) => void;
-};
 
 export function useEditableLabel({
   value,

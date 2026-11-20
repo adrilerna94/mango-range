@@ -11,33 +11,14 @@ import {
   getPercentFromPointer,
   moveHandle,
   percentToValue,
-  type Handle,
-  type SelectedRange,
 } from "../utils/range.utils";
-
-type UseRangeOptions = {
-  min: number;
-  max: number;
-  /** Valor controlado. Si se pasa, el padre es quien lo actualiza. */
-  value?: SelectedRange;
-  /** Valor inicial en modo no controlado. */
-  defaultValue?: SelectedRange;
-  /** En cada cambio, también durante el arrastre. */
-  onValueChange?: (value: SelectedRange) => void;
-  /** Al terminar una interacción: soltar el tirador, una tecla o editar una etiqueta. */
-  onValueCommit?: (value: SelectedRange) => void;
-};
-
-// Arrastre en curso: el puntero que lo controla, la posición de la barra al
-// empezar (se lee una sola vez, no en cada movimiento) y los valores al
-// empezar y en el último movimiento, para avisar al soltar solo si cambió.
-type Drag = {
-  pointerId: number;
-  trackLeft: number;
-  trackWidth: number;
-  start: SelectedRange;
-  latest: SelectedRange;
-};
+import type {
+  Handle,
+  PointerHandlers,
+  RangeDrag,
+  SelectedRange,
+  UseRangeOptions,
+} from "../types/range.types";
 
 function isSameRange(a: SelectedRange, b: SelectedRange) {
   return a.min === b.min && a.max === b.max;
@@ -55,7 +36,7 @@ export function useRange({
   const [activeHandle, setActiveHandle] = useState<Handle | null>(null);
   const [lastHandle, setLastHandle] = useState<Handle>("max");
   const trackRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<Drag | null>(null);
+  const dragRef = useRef<RangeDrag | null>(null);
 
   // Si los límites cambian (p. ej. tras revalidar los datos) o el valor que
   // llega no es válido, se recoloca dentro del rango durante el render.
@@ -82,7 +63,7 @@ export function useRange({
     update(handle, newValue, true);
   }
 
-  function getPointerHandlers(handle: Handle) {
+  function getPointerHandlers(handle: Handle): Required<PointerHandlers> {
     function stopDragging(event: PointerEvent<HTMLElement>) {
       const drag = dragRef.current;
       if (!drag || drag.pointerId !== event.pointerId) return;

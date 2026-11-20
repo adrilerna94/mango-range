@@ -1,25 +1,4 @@
-import type { HTMLAttributes, KeyboardEvent } from "react";
-
-type PointerHandlers = Pick<
-  HTMLAttributes<HTMLDivElement>,
-  | "onPointerDown"
-  | "onPointerMove"
-  | "onPointerUp"
-  | "onPointerCancel"
-  | "onLostPointerCapture"
->;
-
-type RangeHandleProps = PointerHandlers & {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  valueText: string;
-  percent: number;
-  isDragging: boolean;
-  isOnTop: boolean;
-  onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
-};
+import type { RangeHandleProps } from "./types/range.types";
 
 export function RangeHandle({
   label,

@@ -1,9 +1,9 @@
-export type Handle = "min" | "max";
-
-export type SelectedRange = {
-  min: number;
-  max: number;
-};
+import type {
+  Handle,
+  RangeConfig,
+  RangeProps,
+  SelectedRange,
+} from "../types/range.types";
 
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
@@ -48,6 +48,34 @@ export function getClosestIndex(values: number[], target: number): number {
         : closest,
     0,
   );
+}
+
+// Los dos modos comparten la lógica trabajando con posiciones: los valores en
+// modo normal y los índices de la lista en modo fijo.
+export function getRangeConfig(props: RangeProps): RangeConfig {
+  if (props.mode === "fixed") {
+    const { values } = props;
+
+    return {
+      min: 0,
+      max: values.length - 1,
+      isEditable: false,
+      // Una marca en la barra por cada valor posible.
+      markCount: values.length,
+      getPrice: (index: number) => values[index],
+      // Un precio que no está en la lista se ajusta al más cercano.
+      toPosition: (price: number) => getClosestIndex(values, price),
+    };
+  }
+
+  return {
+    min: props.min,
+    max: props.max,
+    isEditable: true,
+    markCount: 0,
+    getPrice: (value: number) => value,
+    toPosition: (price: number) => price,
+  };
 }
 
 // Formato de precio en español: "1 €", "1,99 €" (con espacio duro antes del

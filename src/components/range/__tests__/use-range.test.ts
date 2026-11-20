@@ -2,6 +2,7 @@ import type { KeyboardEvent, PointerEvent } from "react";
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useRange } from "../hooks/use-range";
+import type { Handle } from "../types/range.types";
 
 // Las reglas de límites y de no cruzarse se prueban en `moveHandle`
 // (range.utils.test.ts). Aquí solo se prueba lo propio del hook: estado,
@@ -14,7 +15,6 @@ function createTrack(left: number, width: number) {
 }
 
 type RangeResult = ReturnType<typeof renderRange>;
-type Handle = "min" | "max";
 
 function pointerEvent({ pointerId = 1, button = 0, clientX = 0 } = {}) {
   return {
@@ -89,6 +89,20 @@ describe("useRange: valores", () => {
     act(() => result.current.setValue("min", 30));
 
     expect(result.current.minValue).toBe(30);
+  });
+
+  it("no avisa al padre si el valor no cambia", () => {
+    const onValueChange = vi.fn();
+    const onValueCommit = vi.fn();
+    const { result } = renderHook(() =>
+      useRange({ min: 0, max: 100, onValueChange, onValueCommit }),
+    );
+
+    act(() => result.current.setValue("min", -10));
+
+    expect(result.current.minValue).toBe(0);
+    expect(onValueChange).not.toHaveBeenCalled();
+    expect(onValueCommit).not.toHaveBeenCalled();
   });
 
   it("recoloca los valores si los límites se estrechan", () => {

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ApiError, getRangeLimits, getRangeValues } from "./range.api";
+import { ApiError, getRangeLimits, getRangeValues } from "../range.api";
 
 // `server-only` lanza un error fuera de un entorno de React Server Components y
 // `connection` solo funciona dentro de una petición de Next.
@@ -158,7 +158,7 @@ describe("URL base de la API", () => {
     vi.stubEnv("API_URL", "https://api.example.com");
     // API_URL se lee al cargar el módulo: hay que volver a importarlo.
     vi.resetModules();
-    const { getRangeLimits } = await import("./range.api");
+    const { getRangeLimits } = await import("../range.api");
     const fetchMock = mockFetch({ min: 1, max: 100 });
 
     await getRangeLimits();
