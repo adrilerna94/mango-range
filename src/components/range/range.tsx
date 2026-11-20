@@ -4,45 +4,18 @@ import { RangeHandle } from "./range-handle";
 import { RangeLabel } from "./range-label";
 import { useRange } from "./hooks/use-range";
 import type {
-  RangeConfig,
   RangeProps,
   RangeValue,
   SelectedRange,
 } from "./types/range.types";
 import {
   formatCurrency,
-  getClosestIndex,
+  getRangeConfig,
   valueToPercent,
 } from "./utils/range.utils";
 
 // Tipos de la API pública, para importarlos junto al componente.
 export type { RangeProps, RangeValue } from "./types/range.types";
-
-function getRangeConfig(props: RangeProps): RangeConfig {
-  if (props.mode === "fixed") {
-    const { values } = props;
-
-    return {
-      min: 0,
-      max: values.length - 1,
-      isEditable: false,
-      // Una marca en la barra por cada valor posible.
-      markCount: values.length,
-      getPrice: (index: number) => values[index],
-      // Un precio que no está en la lista se ajusta al más cercano.
-      toPosition: (price: number) => getClosestIndex(values, price),
-    };
-  }
-
-  return {
-    min: props.min,
-    max: props.max,
-    isEditable: true,
-    markCount: 0,
-    getPrice: (value: number) => value,
-    toPosition: (price: number) => price,
-  };
-}
 
 export function Range(props: RangeProps) {
   const { value, defaultValue, onValueChange, onValueCommit } = props;

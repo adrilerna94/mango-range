@@ -6,6 +6,7 @@ import {
   getClosestIndex,
   getKeyboardValue,
   getPercentFromPointer,
+  getRangeConfig,
   moveHandle,
   parseLabelValue,
   percentToValue,
@@ -91,6 +92,46 @@ describe("getClosestIndex", () => {
     expect(getClosestIndex(values, 9)).toBe(2);
     expect(getClosestIndex(values, 0)).toBe(0);
     expect(getClosestIndex(values, 100)).toBe(2);
+  });
+});
+
+describe("getRangeConfig", () => {
+  it("en modo normal usa los límites y el precio es el propio valor", () => {
+    const config = getRangeConfig({ mode: "normal", min: 1, max: 100 });
+
+    expect(config).toMatchObject({
+      min: 1,
+      max: 100,
+      isEditable: true,
+      markCount: 0,
+    });
+    expect(config.getPrice(30)).toBe(30);
+    expect(config.toPosition(30)).toBe(30);
+  });
+
+  it("en modo fijo trabaja con los índices de la lista", () => {
+    const config = getRangeConfig({
+      mode: "fixed",
+      values: [1.99, 5.99, 10.99],
+    });
+
+    expect(config).toMatchObject({
+      min: 0,
+      max: 2,
+      isEditable: false,
+      markCount: 3,
+    });
+    expect(config.getPrice(1)).toBe(5.99);
+    expect(config.toPosition(5.99)).toBe(1);
+  });
+
+  it("en modo fijo ajusta un precio que no está en la lista al más cercano", () => {
+    const config = getRangeConfig({
+      mode: "fixed",
+      values: [1.99, 5.99, 10.99],
+    });
+
+    expect(config.toPosition(9)).toBe(2);
   });
 });
 
