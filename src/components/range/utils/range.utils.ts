@@ -55,6 +55,8 @@ export function clampRange(
   return { min, max };
 }
 
+// Devuelve el mismo objeto si el valor no cambia, para que React pueda saltarse
+// el render (p. ej. en los `pointermove` que no llegan a cambiar de valor).
 export function moveHandle(
   selected: SelectedRange,
   handle: Handle,
@@ -62,10 +64,14 @@ export function moveHandle(
   bounds: SelectedRange,
 ): SelectedRange {
   if (handle === "min") {
-    return { ...selected, min: clamp(value, bounds.min, selected.max - 1) };
+    const min = clamp(value, bounds.min, selected.max - 1);
+
+    return min === selected.min ? selected : { ...selected, min };
   }
 
-  return { ...selected, max: clamp(value, selected.min + 1, bounds.max) };
+  const max = clamp(value, selected.min + 1, bounds.max);
+
+  return max === selected.max ? selected : { ...selected, max };
 }
 
 export function getKeyboardValue(

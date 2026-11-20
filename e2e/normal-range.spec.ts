@@ -31,6 +31,16 @@ test.describe("Ejercicio 1: rango normal", () => {
     expect(await valueNow(maxHandle)).toBeLessThanOrEqual(77);
   });
 
+  test("solo arrastra con el botón principal del ratón", async ({ page }) => {
+    const { minHandle } = getHandles(page);
+
+    await dragWithMouse(page, minHandle, 50, "right");
+    await expect(minHandle).toHaveAttribute("aria-valuenow", "1");
+
+    await dragWithMouse(page, minHandle, 50, "middle");
+    await expect(minHandle).toHaveAttribute("aria-valuenow", "1");
+  });
+
   test("los tiradores no se cruzan al arrastrar", async ({ page }) => {
     const { minHandle, maxHandle } = getHandles(page);
 

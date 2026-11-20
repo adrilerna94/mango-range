@@ -114,6 +114,17 @@ describe("clampRange", () => {
 });
 
 describe("moveHandle", () => {
+  it.each(["min", "max"] as const)(
+    "devuelve el mismo objeto si el tirador %s no cambia de valor",
+    (handle) => {
+      const selected = { min: 20, max: 80 };
+
+      expect(moveHandle(selected, handle, selected[handle], BOUNDS)).toBe(
+        selected,
+      );
+    },
+  );
+
   it("mueve el tirador mínimo", () => {
     expect(moveHandle({ min: 0, max: 100 }, "min", 30, BOUNDS)).toEqual({
       min: 30,

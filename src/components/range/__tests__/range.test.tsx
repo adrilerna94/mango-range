@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Range } from "../range";
@@ -26,16 +26,13 @@ function mockTrackSize(left: number, width: number) {
   } as DOMRect);
 }
 
-function movePointer(clientX: number) {
-  act(() => {
-    window.dispatchEvent(new MouseEvent("pointermove", { clientX }));
-  });
+// Con la captura de puntero, los eventos del arrastre llegan al tirador.
+function movePointer(handle: HTMLElement, clientX: number) {
+  fireEvent.pointerMove(handle, { clientX });
 }
 
-function releasePointer() {
-  act(() => {
-    window.dispatchEvent(new MouseEvent("pointerup"));
-  });
+function releasePointer(handle: HTMLElement) {
+  fireEvent.pointerUp(handle);
 }
 
 afterEach(() => {
@@ -111,7 +108,7 @@ describe("Range en modo normal: arrastre y teclado", () => {
     fireEvent.pointerDown(minHandle);
     expect(minHandle).toHaveClass("cursor-grabbing");
 
-    releasePointer();
+    releasePointer(minHandle);
     expect(minHandle).toHaveClass("cursor-grab");
   });
 
@@ -191,7 +188,7 @@ describe("Range en modo fijo: arrastre y teclado", () => {
     const { minHandle } = renderFixedRange();
 
     fireEvent.pointerDown(minHandle);
-    movePointer(90);
+    movePointer(minHandle, 90);
 
     expect(minHandle).toHaveAttribute("aria-valuetext", "10.99€");
     expect(minHandle).toHaveStyle({ left: "40%" });
@@ -202,7 +199,7 @@ describe("Range en modo fijo: arrastre y teclado", () => {
     const { minHandle } = renderFixedRange();
 
     fireEvent.pointerDown(minHandle);
-    movePointer(90);
+    movePointer(minHandle, 90);
 
     expect(screen.getByText("10.99€")).toBeInTheDocument();
   });
@@ -212,7 +209,7 @@ describe("Range en modo fijo: arrastre y teclado", () => {
     const { maxHandle } = renderFixedRange();
 
     fireEvent.pointerDown(maxHandle);
-    movePointer(0);
+    movePointer(maxHandle, 0);
 
     expect(maxHandle).toHaveAttribute("aria-valuetext", "5.99€");
   });

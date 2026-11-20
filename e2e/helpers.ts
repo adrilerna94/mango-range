@@ -32,14 +32,15 @@ export async function dragWithMouse(
   page: Page,
   handle: Locator,
   toPercent: number,
+  button: "left" | "right" | "middle" = "left",
 ) {
   const from = await center(handle);
   const to = await trackPoint(handle, toPercent);
 
   await page.mouse.move(from.x, from.y);
-  await page.mouse.down();
+  await page.mouse.down({ button });
   await page.mouse.move(to.x, to.y, { steps: 10 });
-  await page.mouse.up();
+  await page.mouse.up({ button });
 }
 
 /**
